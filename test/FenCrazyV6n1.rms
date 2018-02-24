@@ -1,0 +1,5456 @@
+/* ******************************************************************* */
+/*                                                                     */
+/*                        FenCrazyV6                                   */
+/*                  fenris_w0lf@hotmail.com                            */
+/* ******************************************************************* */
+/* based upon: fenris_unknownB13.rms, fenris_crazymapv10.rms           */
+/*             & ES@THE_UNKNOWN (c) Ensemble Studios                   */
+/* ------------------------------------------------------------------- */
+/* V1 changes/fixes (from unknownBx):                                  */
+/* * only 0 - 1 TC now instead of 0 - 3 TC's                           */
+/* * changed so one get defense BT's and castles more often            */
+/* * fixed walled in by trees                                          */
+/* * fixed "eye-candy" in middle                                       */
+/* * Two types of Nomad:                                               */
+/*    1) "REAL NOMAD" (where vills are scattered across map            */
+/*    2) "FAKE NOMAD" (all vills located near the                      */
+/*       "standard starting point" - with gold/stone/berries/sheep etc */
+/*       (where you would normally expect to find your TC in a         */
+/*       regular game/map)                                             */
+/* * added 0-5 gaia villagers pr player in nomad maps                  */
+/* * if nomad added random 0-2 outposts                                */
+/* * added a random possibiltiy for monk(s) as scouts in 'fake nomad'  */
+/*    one will get more vills if there's monks                         */
+/* * readded VDML scout (2% chance)                                    */
+/* * added possibility to get a King scout (one will not lose game     */
+/*    if king dies - unless the game is regicide ofcourse)             */
+/* * reduced nbr of crazy scouts from 0-2 to 0-1                       */
+/* * increased nbr of eye-candy objects                                */
+/* * removed commented code                                            */
+/* * changed forage level (boars/deers/sheep/berries) back to total    */
+/*    random including very low                                        */
+/* * readded wolves/jaguars (not on nomad maps)                        */
+/* * readded low gold (still 0% chance of EXTRA LOW & NO gold          */
+/* * removed Hawks and Macaws totally                                  */
+/* * tidyed up the code to make file smaller                           */
+/* * removed IronBoar, DireWolf etc                                    */
+/* * fixed player_lands/PLAYER_TREES                                   */
+/* * LARGE_AVOIDANCE & XLARGE_AVOIDANCE removed                        */
+/* * minor adjustments done to player_lands/land_percent               */
+/* * corrected PlayerTrees according to LAND1-LAND10                   */
+/* * adjustment done to the "mixing of water" according to water map   */
+/* * fixed resource-layout for 'real nomad' games                      */
+/* * ensured that all lands are connected in 'nomad' games             */
+/* * readded "Connection Information"                                  */
+/* ------------------------------------------------------------------- */
+/* V2 changes/fixes:                                                   */
+/* * Fixed Player Lands on real nomad games (no trees bug)             */
+/* * made scout available in fake nomad games                          */
+/* * minor adjustments done to how villagers gets created in fake      */
+/*   nomad games, hopefully it fixed the extra-vill-for-host bug       */
+/* ------------------------------------------------------------------- */
+/* V3 changes/fixes:                                                   */
+/* * Reduced chance for desert map                                     */
+/* * 1% chance for VDML or Monk (changed from 2%)                      */
+/* ------------------------------------------------------------------- */
+/* V4 changes/fixes:                                                   */
+/* * TC generation:                                                    */
+/*   - 95% chance for 1 TC                                             */
+/*   -  4% chance for 2 TCs                                            */
+/*   -  1% chance for 3 TCs                                            */
+/* ------------------------------------------------------------------- */
+/* V5 changes/fixes:                                                   */
+/* * TC generation:                                                    */
+/*   - 70% chance for 1 TC                                             */
+/*   - 20% chance for 2 TCs                                            */
+/*   - 10% chance for 3 TCs                                            */
+/* * rewrote the crazyscouts/defense sections so that you get better   */
+/*    defense if the scouts are more mean                              */
+/* * rewrote replace_terrain / terrain_size from 4 2 to 1 0            */
+/* * removed everything snowy                                          */
+/* * randomized "Select Player Land Avoidance" again                   */
+/* * added section to add extra vills at random not just               */
+/*    if nomad and monk scout                                          */
+/* * removed all border logic in "create_player_lands"                 */
+/* * since its never used; removed everything conserning               */
+/*    -EXTRA_LOW_FOREST                                                */
+/*    -EXTRA_LOW_PLAYER_GOLD                                           */
+/*    -NO_PLAYER_GOLD                                                  */
+/* * redid LOW/NORMAL/HIGH _FOREST_CLUMPS                              */
+/* * redid randomization of LAND1-10                                   */
+/* * redid distance_to_players for vills/tc's                          */
+/* * 0-3 instead of 0-2 outpost in nomad games                         */
+/* * increased the nbr of KF_ECONFOOD and KF_ECONRES                   */
+/* * removed chance of KF_ECONUNITS (never had any logic anyways :?)   */
+/* ------------------------------------------------------------------- */
+/* V6 changes/fixes:                                                   */
+/* * TC generation:                                                    */
+/*   - 85% chance for 1 TC                                             */
+/*   - 10% chance for 2 TCs                                            */
+/*   -  5% chance for 3 TCs                                            */
+/* * Moved <PLAYER_SETUP> and added ai_info_map_type                   */
+/* * Added stuff for resource_delta                                    */
+/* * Removed KF_ECONUNITS alltogether                                  */
+/* * Changed elevation entirely                                        */
+/* * Redid KF_ECONBUILDINGS from const to define                       */
+/* * Removed all eyecandy                                              */
+/* * Removed jungle due to 255 zone crapzor                            */
+/* * Removed connect all lands - due to 255 zone crapzor overflow      */
+/* * Removed monk on nomad, added regular scout instead                */
+/* * Some changes to zones on nomad                                    */
+/* * Redid scouts and villie production                                */
+/* * Removed all special chars and tabs and trailing spaces            */
+/* * Tidyed up all the idents                                          */
+/* * Fixed so no scout is given that AI's cant use                     */
+/* * Redid the KFCRAZYUNITS totally                                    */
+/* * Tried to add docks, but the danger of infair dock is too big      */
+/* * Added Walls                                                       */
+/* * Tidyed up villager-code                                           */
+/* * New gaia vills randomization                                      */
+/* * EXTRA_HIGH_BOAR now randomly gives much more boar                 */
+/* * Adjusted up a bit EXTRA_HIGH_SHEEP and down EXTRA_LOW_DEER        */
+/* * Brought back jungle and snow/ice                                  */
+/* * Adjusted up a bit wolves-count                                    */
+/* * There should be no wolves if no scout now                         */
+/* * Changed connection-rules a bit                                    */
+/* * Adjusted max_distance_to_players for wall so that enemies wall    */
+/*   dont overlap                                                      */
+/* * Adjusted max_distance_to_players for TC so that they dont end up  */
+/*   on top of each other - also hopefully avoiding the walls          */
+/* * NO_CONNECTIONS removed                                            */
+/* * Added VERY_HIGH_CLIFF and randomized min_length_of_cliff,         */
+/*   max_length_of_cliff, cliff_curliness and min_distance_cliffs      */
+/* * Fixed a bad bug introduced with the new gaia vills code           */
+/* ******************************************************************* */
+/* * TIPS:                                                             */
+/* * If map is suddenly weird and/or acting up do a search for:        */
+/*   "else if"                                                         */
+/* ******************************************************************* */
+
+#const MOSS_ROAD 39
+
+/* ******************************************************************* */
+/* Setup TC(s), nomad, starting crazy-stuff etc                        */
+/* ******************************************************************* */
+
+start_random
+ percent_chance 60 #define KF_TC
+ percent_chance 40 #define KF_NOMAD
+end_random
+
+if KF_TC
+ start_random
+  percent_chance 85 #define KF_ONE_TC
+  percent_chance 10 #define KF_TWO_TC
+  percent_chance 5 #define KF_THREE_TC
+ end_random
+ start_random
+  percent_chance 50 #define KF_MIL_U
+  percent_chance 25 #define KF_MIL_B
+  percent_chance 25 #define KF_ECON 
+ end_random
+endif
+
+if KF_NOMAD
+ start_random
+  percent_chance 50 #define REAL_NOMAD
+  percent_chance 50 #define FAKE_NOMAD
+ end_random
+ start_random
+  percent_chance 50 #define KF_MIL_B
+  percent_chance 50 #define KF_ECON
+ end_random
+endif
+
+if KF_MIL_U /* Military Units */
+ start_random
+  percent_chance 34 #define KF_MIL_U_G /* Good units */
+  percent_chance 33 #define KF_MIL_U_M /* Medium units */
+  percent_chance 33 #define KF_MIL_U_B /* Bad units */
+  #define KF_WOLVES
+ end_random
+endif
+
+if KF_MIL_U_B
+ start_random
+  percent_chance 17 #const KFCRAZYUNIT  93 /* Spearman                 */
+  percent_chance 17 #const KFCRAZYUNIT  74 /* Militia                  */
+  percent_chance 17 #const KFCRAZYUNIT 358 /* Pikeman                  */
+  percent_chance 17 #const KFCRAZYUNIT 751 /* Eagle Warrior            */
+  percent_chance 16 #const KFCRAZYUNIT  75 /* Man-at-arms              */
+  percent_chance 16 #const KFCRAZYUNIT 448 /* Scout Cavalry            */
+ end_random
+ #define CRAZYUNITDEF
+elseif KF_MIL_U_M
+ start_random
+  percent_chance 8 #const KFCRAZYUNIT 329 /* Camel                     */
+  percent_chance 8 #const KFCRAZYUNIT 546 /* Light Cavalry             */
+  percent_chance 7 #const KFCRAZYUNIT 330 /* Heavy Camel               */
+  percent_chance 7 #const KFCRAZYUNIT  38 /* Knight                    */
+  percent_chance 7 #const KFCRAZYUNIT 441 /* Hussar                    */
+  percent_chance 7 #const KFCRAZYUNIT 359 /* Halberdier                */
+  percent_chance 7 #const KFCRAZYUNIT 291 /* Samurai                   */
+  percent_chance 7 #const KFCRAZYUNIT 232 /* Woad Raider               */
+  percent_chance 7 #const KFCRAZYUNIT  77 /* Long Swordman             */
+  percent_chance 7 #const KFCRAZYUNIT 692 /* Berserk                   */
+  percent_chance 7 #const KFCRAZYUNIT 752 /* Elite Eagle Warrior       */
+  percent_chance 7 #const KFCRAZYUNIT 725 /* Jaguar Warrior            */
+  percent_chance 7 #const KFCRAZYUNIT 759 /* (Barracks)Huskarl         */
+  percent_chance 7 #const KFCRAZYUNIT 473 /* Two-Handed Swordman       */
+ end_random
+ #define CRAZYUNITDEF
+elseif KF_MIL_U_G
+ start_random
+  percent_chance 1 #const KFCRAZYUNIT 726 /* Elite Jaguar Warrior      */
+  percent_chance 1 #const KFCRAZYUNIT 761 /* (Barracks)Elite Huskarl   */
+  percent_chance 1 #const KFCRAZYUNIT 560 /* Elite Samurai             */
+  percent_chance 1 #const KFCRAZYUNIT 567 /* Champion                  */
+  percent_chance 1 #const KFCRAZYUNIT 534 /* Elite Woad Raider         */
+  percent_chance 1 #const KFCRAZYUNIT 694 /* Elite Berserk             */
+  percent_chance 1 #const KFCRAZYUNIT 430 /* Joan the Maid             */
+  percent_chance 1 #const KFCRAZYUNIT 783 /* Saythan Wild Woman        */
+  percent_chance 2 #const KFCRAZYUNIT 165 /* Charlemagne               */
+  percent_chance 2 #const KFCRAZYUNIT 169 /* Aethelfirth               */
+  percent_chance 2 #const KFCRAZYUNIT 195 /* Kitabatake                */
+  percent_chance 2 #const KFCRAZYUNIT 196 /* Minamoto                  */
+  percent_chance 2 #const KFCRAZYUNIT 845 /* Nobunaga                  */
+  percent_chance 2 #const KFCRAZYUNIT 171 /* Erik the Red              */
+  percent_chance 2 #const KFCRAZYUNIT 164 /* Sheriff of Nottingham     */
+  percent_chance 2 #const KFCRAZYUNIT 168 /* Theodoric the Goth        */
+  percent_chance 2 #const KFCRAZYUNIT 424 /* Charles Martel            */
+  percent_chance 2 #const KFCRAZYUNIT 198 /* El Cid                    */
+  percent_chance 2 #const KFCRAZYUNIT 426 /* Harald Hardraade          */
+  percent_chance 2 #const KFCRAZYUNIT 173 /* King Arthur               */
+  percent_chance 2 #const KFCRAZYUNIT 170 /* Siegfried                 */
+  percent_chance 2 #const KFCRAZYUNIT 640 /* La Hire                   */
+  percent_chance 2 #const KFCRAZYUNIT 432 /* William Wallace           */
+  percent_chance 2 #const KFCRAZYUNIT  40 /* Cataphract                */
+  percent_chance 2 #const KFCRAZYUNIT 755 /* Tarkan                    */
+  percent_chance 2 #const KFCRAZYUNIT 757 /* Elite Tarkan              */
+  percent_chance 2 #const KFCRAZYUNIT 283 /* Cavalier                  */
+  percent_chance 2 #const KFCRAZYUNIT 553 /* Elite Cataphract          */
+  percent_chance 2 #const KFCRAZYUNIT 569 /* Paladin                   */
+  percent_chance 2 #const KFCRAZYUNIT 167 /* Belisarius                */
+  percent_chance 2 #const KFCRAZYUNIT 166 /* Roland                    */
+  percent_chance 2 #const KFCRAZYUNIT 852 /* Scythian Scout            */
+  percent_chance 2 #const KFCRAZYUNIT 197 /* Alesander Nevski          */
+  percent_chance 2 #const KFCRAZYUNIT 175 /* Gawain                    */
+  percent_chance 2 #const KFCRAZYUNIT 636 /* Sieur Bertrand            */
+  percent_chance 2 #const KFCRAZYUNIT 161 /* The Black Prince          */
+  percent_chance 2 #const KFCRAZYUNIT 777 /* Attila the Hun            */
+  percent_chance 2 #const KFCRAZYUNIT 779 /* Bleda the Hun             */
+  percent_chance 2 #const KFCRAZYUNIT 648 /* Guy Josselyne             */
+  percent_chance 2 #const KFCRAZYUNIT 174 /* Lancelot                  */
+  percent_chance 2 #const KFCRAZYUNIT 176 /* Mordred                   */
+  percent_chance 2 #const KFCRAZYUNIT 160 /* Richard the Lionhearted   */
+  percent_chance 2 #const KFCRAZYUNIT 646 /* Constable Richemont       */
+  percent_chance 2 #const KFCRAZYUNIT 824 /* El Cid Campeador          */
+  percent_chance 2 #const KFCRAZYUNIT 632 /* Frankish Paladin          */
+  percent_chance 2 #const KFCRAZYUNIT 680 /* Master of the Templar     */
+  percent_chance 2 #const KFCRAZYUNIT 634 /* Sieur de Metz             */
+  percent_chance 2 #const KFCRAZYUNIT 849 /* William the Conqueror     */
+  percent_chance 2 #const KFCRAZYUNIT 638 /* Duke D'Alencon            */
+  percent_chance 2 #const KFCRAZYUNIT 847 /* Henry V                   */
+  percent_chance 2 #const KFCRAZYUNIT 678 /* Reynald de Chatillon      */
+  percent_chance 2 #const KFCRAZYUNIT 629 /* Joan of Arc               */
+  percent_chance 2 #const KFCRAZYUNIT 702 /* Kushluk                   */
+  percent_chance 2 #const KFCRAZYUNIT 652 /* Sir John Fastolf          */
+ end_random
+ #define CRAZYUNITDEF
+endif
+
+if KF_MIL_U_B
+ #define KF_DEF_B
+elseif KF_MIL_U_M
+ #define KF_DEF_M
+elseif KF_MIL_U_G
+ #define KF_DEF_G
+endif
+
+if KF_ECON
+ start_random
+  percent_chance 34 #define KF_ECONFOOD
+  percent_chance 33 #define KF_ECONRES
+  percent_chance 33 #define KF_ECONBUILDINGS
+ end_random
+endif
+
+if KF_ECONFOOD
+ start_random
+  percent_chance 33 #const KFCRAZYUNIT 48
+  percent_chance 34 #const KFCRAZYUNIT 59
+  percent_chance 33 #const KFCRAZYUNIT 65
+ end_random
+ #define CRAZYUNITDEF
+elseif KF_ECONRES
+ start_random
+  percent_chance 50 #const KFCRAZYUNIT 66
+  percent_chance 50 #const KFCRAZYUNIT 102
+ end_random
+ #define CRAZYUNITDEF
+elseif KF_ECONBUILDINGS
+ start_random
+  percent_chance 17 #define KF_EB_FARM
+  percent_chance 17 #define KF_EB_HOUSE
+  percent_chance 17 #define KF_EB_MILL
+  percent_chance 17 #define KF_EB_MARKET
+  percent_chance 16 #define KF_EB_BLACKSMITH
+  percent_chance 16 #define KF_EB_UNIVERSITY
+ end_random
+endif
+
+/* ******************************************************************* */
+/* Setup resource delta                                                */
+/* ******************************************************************* */
+
+start_random
+ percent_chance 50 #define KF_RD_STONE
+end_random
+start_random
+ percent_chance 50 #define KF_RD_MSTONE
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XSTONE
+end_random
+start_random
+ percent_chance 50 #define KF_RD_GOLD
+end_random
+start_random
+ percent_chance 50 #define KF_RD_FGOLD
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XGOLD
+end_random
+start_random
+ percent_chance 50 #define KF_RD_SHEEP
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XSHEEP
+end_random
+start_random
+ percent_chance 50 #define KF_RD_FORAGE
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XFORAGE
+end_random
+start_random
+ percent_chance 50 #define KF_RD_BOAR
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XBOAR
+end_random
+start_random
+ percent_chance 50 #define KF_RD_DEER
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XDEER
+end_random
+start_random
+ percent_chance 50 #define KF_RD_DEEPFISH
+end_random
+start_random
+ percent_chance 50 #define KF_RD_SHOREFISH
+end_random
+start_random
+ percent_chance 50 #define KF_RD_STRAGGLER
+end_random
+start_random
+ percent_chance 50 #define KF_RD_XSTRAGGLER
+end_random
+
+if KF_RD_STONE
+ start_random
+  percent_chance  1 #define KF_RD_STONE_X
+  percent_chance  3 #define KF_RD_STONE_H
+  percent_chance  6 #define KF_RD_STONE_M
+  percent_chance 10 #define KF_RD_STONE_L
+  percent_chance 60 #define KF_RD_STONE_NO
+  percent_chance 10 #define KF_RD_STONE_NEG_L
+  percent_chance  6 #define KF_RD_STONE_NEG_M
+  percent_chance  3 #define KF_RD_STONE_NEG_H
+  percent_chance  1 #define KF_RD_STONE_NEG_X
+ end_random
+endif
+if KF_RD_MSTONE
+ start_random
+  percent_chance  1 #define KF_RD_MSTONE_X
+  percent_chance  3 #define KF_RD_MSTONE_H
+  percent_chance  6 #define KF_RD_MSTONE_M
+  percent_chance 10 #define KF_RD_MSTONE_L
+  percent_chance 60 #define KF_RD_MSTONE_NO
+  percent_chance 10 #define KF_RD_MSTONE_NEG_L
+  percent_chance  6 #define KF_RD_MSTONE_NEG_M
+  percent_chance  3 #define KF_RD_MSTONE_NEG_H
+  percent_chance  1 #define KF_RD_MSTONE_NEG_X
+ end_random
+endif
+if KF_RD_XSTONE
+ start_random
+  percent_chance  1 #define KF_RD_XSTONE_X
+  percent_chance  3 #define KF_RD_XSTONE_H
+  percent_chance  6 #define KF_RD_XSTONE_M
+  percent_chance 10 #define KF_RD_XSTONE_L
+  percent_chance 60 #define KF_RD_XSTONE_NO
+  percent_chance 10 #define KF_RD_XSTONE_NEG_L
+  percent_chance  6 #define KF_RD_XSTONE_NEG_M
+  percent_chance  3 #define KF_RD_XSTONE_NEG_H
+  percent_chance  1 #define KF_RD_XSTONE_NEG_X
+ end_random
+endif
+if KF_RD_GOLD
+ start_random
+  percent_chance  1 #define KF_RD_GOLD_X
+  percent_chance  3 #define KF_RD_GOLD_H
+  percent_chance  6 #define KF_RD_GOLD_M
+  percent_chance 10 #define KF_RD_GOLD_L
+  percent_chance 60 #define KF_RD_GOLD_NO
+  percent_chance 10 #define KF_RD_GOLD_NEG_L
+  percent_chance  6 #define KF_RD_GOLD_NEG_M
+  percent_chance  3 #define KF_RD_GOLD_NEG_H
+  percent_chance  1 #define KF_RD_GOLD_NEG_X
+ end_random
+endif
+if KF_RD_FGOLD
+ start_random
+  percent_chance  1 #define KF_RD_FGOLD_X
+  percent_chance  3 #define KF_RD_FGOLD_H
+  percent_chance  6 #define KF_RD_FGOLD_M
+  percent_chance 10 #define KF_RD_FGOLD_L
+  percent_chance 60 #define KF_RD_FGOLD_NO
+  percent_chance 10 #define KF_RD_FGOLD_NEG_L
+  percent_chance  6 #define KF_RD_FGOLD_NEG_M
+  percent_chance  3 #define KF_RD_FGOLD_NEG_H
+  percent_chance  1 #define KF_RD_FGOLD_NEG_X
+ end_random
+endif
+if KF_RD_XGOLD
+ start_random
+  percent_chance  1 #define KF_RD_XGOLD_X
+  percent_chance  3 #define KF_RD_XGOLD_H
+  percent_chance  6 #define KF_RD_XGOLD_M
+  percent_chance 10 #define KF_RD_XGOLD_L
+  percent_chance 60 #define KF_RD_XGOLD_NO
+  percent_chance 10 #define KF_RD_XGOLD_NEG_L
+  percent_chance  6 #define KF_RD_XGOLD_NEG_M
+  percent_chance  3 #define KF_RD_XGOLD_NEG_H
+  percent_chance  1 #define KF_RD_XGOLD_NEG_X
+ end_random
+endif
+if KF_RD_SHEEP
+ start_random
+  percent_chance  1 #define KF_RD_SHEEP_X
+  percent_chance  3 #define KF_RD_SHEEP_H
+  percent_chance  6 #define KF_RD_SHEEP_M
+  percent_chance 10 #define KF_RD_SHEEP_L
+  percent_chance 60 #define KF_RD_SHEEP_NO
+  percent_chance 10 #define KF_RD_SHEEP_NEG_L
+  percent_chance  6 #define KF_RD_SHEEP_NEG_M
+  percent_chance  3 #define KF_RD_SHEEP_NEG_H
+  percent_chance  1 #define KF_RD_SHEEP_NEG_X
+ end_random
+endif
+if KF_RD_XSHEEP
+ start_random
+  percent_chance  1 #define KF_RD_XSHEEP_X
+  percent_chance  3 #define KF_RD_XSHEEP_H
+  percent_chance  6 #define KF_RD_XSHEEP_M
+  percent_chance 10 #define KF_RD_XSHEEP_L
+  percent_chance 60 #define KF_RD_XSHEEP_NO
+  percent_chance 10 #define KF_RD_XSHEEP_NEG_L
+  percent_chance  6 #define KF_RD_XSHEEP_NEG_M
+  percent_chance  3 #define KF_RD_XSHEEP_NEG_H
+  percent_chance  1 #define KF_RD_XSHEEP_NEG_X
+ end_random
+endif
+if KF_RD_FORAGE
+ start_random
+  percent_chance  1 #define KF_RD_FORAGE_X
+  percent_chance  3 #define KF_RD_FORAGE_H
+  percent_chance  6 #define KF_RD_FORAGE_M
+  percent_chance 10 #define KF_RD_FORAGE_L
+  percent_chance 60 #define KF_RD_FORAGE_NO
+  percent_chance 10 #define KF_RD_FORAGE_NEG_L
+  percent_chance  6 #define KF_RD_FORAGE_NEG_M
+  percent_chance  3 #define KF_RD_FORAGE_NEG_H
+  percent_chance  1 #define KF_RD_FORAGE_NEG_X
+ end_random
+endif
+if KF_RD_XFORAGE
+ start_random
+  percent_chance  1 #define KF_RD_XFORAGE_X
+  percent_chance  3 #define KF_RD_XFORAGE_H
+  percent_chance  6 #define KF_RD_XFORAGE_M
+  percent_chance 10 #define KF_RD_XFORAGE_L
+  percent_chance 60 #define KF_RD_XFORAGE_NO
+  percent_chance 10 #define KF_RD_XFORAGE_NEG_L
+  percent_chance  6 #define KF_RD_XFORAGE_NEG_M
+  percent_chance  3 #define KF_RD_XFORAGE_NEG_H
+  percent_chance  1 #define KF_RD_XFORAGE_NEG_X
+ end_random
+endif
+if KF_RD_BOAR
+ start_random
+  percent_chance  1 #define KF_RD_BOAR_X
+  percent_chance  3 #define KF_RD_BOAR_H
+  percent_chance  6 #define KF_RD_BOAR_M
+  percent_chance 10 #define KF_RD_BOAR_L
+  percent_chance 60 #define KF_RD_BOAR_NO
+  percent_chance 10 #define KF_RD_BOAR_NEG_L
+  percent_chance  6 #define KF_RD_BOAR_NEG_M
+  percent_chance  3 #define KF_RD_BOAR_NEG_H
+  percent_chance  1 #define KF_RD_BOAR_NEG_X
+ end_random
+endif
+if KF_RD_XBOAR
+ start_random
+  percent_chance  1 #define KF_RD_XBOAR_X
+  percent_chance  3 #define KF_RD_XBOAR_H
+  percent_chance  6 #define KF_RD_XBOAR_M
+  percent_chance 10 #define KF_RD_XBOAR_L
+  percent_chance 60 #define KF_RD_XBOAR_NO
+  percent_chance 10 #define KF_RD_XBOAR_NEG_L
+  percent_chance  6 #define KF_RD_XBOAR_NEG_M
+  percent_chance  3 #define KF_RD_XBOAR_NEG_H
+  percent_chance  1 #define KF_RD_XBOAR_NEG_X
+ end_random
+endif
+if KF_RD_DEER
+ start_random
+  percent_chance  1 #define KF_RD_DEER_X
+  percent_chance  3 #define KF_RD_DEER_H
+  percent_chance  6 #define KF_RD_DEER_M
+  percent_chance 10 #define KF_RD_DEER_L
+  percent_chance 60 #define KF_RD_DEER_NO
+  percent_chance 10 #define KF_RD_DEER_NEG_L
+  percent_chance  6 #define KF_RD_DEER_NEG_M
+  percent_chance  3 #define KF_RD_DEER_NEG_H
+  percent_chance  1 #define KF_RD_DEER_NEG_X
+ end_random
+endif
+if KF_RD_XDEER
+ start_random
+  percent_chance  1 #define KF_RD_XDEER_X
+  percent_chance  3 #define KF_RD_XDEER_H
+  percent_chance  6 #define KF_RD_XDEER_M
+  percent_chance 10 #define KF_RD_XDEER_L
+  percent_chance 60 #define KF_RD_XDEER_NO
+  percent_chance 10 #define KF_RD_XDEER_NEG_L
+  percent_chance  6 #define KF_RD_XDEER_NEG_M
+  percent_chance  3 #define KF_RD_XDEER_NEG_H
+  percent_chance  1 #define KF_RD_XDEER_NEG_X
+ end_random
+endif
+if KF_RD_DEEPFISH
+ start_random
+  percent_chance  1 #define KF_RD_DEEPFISH_X
+  percent_chance  3 #define KF_RD_DEEPFISH_H
+  percent_chance  6 #define KF_RD_DEEPFISH_M
+  percent_chance 10 #define KF_RD_DEEPFISH_L
+  percent_chance 60 #define KF_RD_DEEPFISH_NO
+  percent_chance 10 #define KF_RD_DEEPFISH_NEG_L
+  percent_chance  6 #define KF_RD_DEEPFISH_NEG_M
+  percent_chance  3 #define KF_RD_DEEPFISH_NEG_H
+  percent_chance  1 #define KF_RD_DEEPFISH_NEG_X
+ end_random
+endif
+if KF_RD_SHOREFISH
+ start_random
+  percent_chance  1 #define KF_RD_SHOREFISH_X
+  percent_chance  3 #define KF_RD_SHOREFISH_H
+  percent_chance  6 #define KF_RD_SHOREFISH_M
+  percent_chance 10 #define KF_RD_SHOREFISH_L
+  percent_chance 60 #define KF_RD_SHOREFISH_NO
+  percent_chance 10 #define KF_RD_SHOREFISH_NEG_L
+  percent_chance  6 #define KF_RD_SHOREFISH_NEG_M
+  percent_chance  3 #define KF_RD_SHOREFISH_NEG_H
+  percent_chance  1 #define KF_RD_SHOREFISH_NEG_X
+ end_random
+endif
+if KF_RD_STRAGGLER
+ start_random
+  percent_chance  1 #define KF_RD_STRAGGLER_X
+  percent_chance  3 #define KF_RD_STRAGGLER_H
+  percent_chance  6 #define KF_RD_STRAGGLER_M
+  percent_chance 10 #define KF_RD_STRAGGLER_L
+  percent_chance 60 #define KF_RD_STRAGGLER_NO
+  percent_chance 10 #define KF_RD_STRAGGLER_NEG_L
+  percent_chance  6 #define KF_RD_STRAGGLER_NEG_M
+  percent_chance  3 #define KF_RD_STRAGGLER_NEG_H
+  percent_chance  1 #define KF_RD_STRAGGLER_NEG_X
+ end_random
+endif
+if KF_RD_XSTRAGGLER
+ start_random
+  percent_chance  1 #define KF_RD_XSTRAGGLER_X
+  percent_chance  3 #define KF_RD_XSTRAGGLER_H
+  percent_chance  6 #define KF_RD_XSTRAGGLER_M
+  percent_chance 10 #define KF_RD_XSTRAGGLER_L
+  percent_chance 60 #define KF_RD_XSTRAGGLER_NO
+  percent_chance 10 #define KF_RD_XSTRAGGLER_NEG_L
+  percent_chance  6 #define KF_RD_XSTRAGGLER_NEG_M
+  percent_chance  3 #define KF_RD_XSTRAGGLER_NEG_H
+  percent_chance  1 #define KF_RD_XSTRAGGLER_NEG_X
+ end_random
+endif
+
+/* ******************************************************************* */
+/* Player setup                                                        */
+/* ******************************************************************* */
+
+<PLAYER_SETUP>
+random_placement
+
+if KF_TC
+  ai_info_map_type CUSTOM 0 0 0
+elseif KF_NOMAD
+  ai_info_map_type CUSTOM 1 0 0
+endif
+
+if REAL_NOMAD
+ start_random
+  percent_chance 50 #define TEAM_CONNECTIONS
+  percent_chance 50 #define ALL_PLAYERS_CONNECTIONS
+ end_random
+else
+ start_random
+  percent_chance 33 #define ALL_PLAYERS_CONNECTIONS
+  percent_chance 33 #define ALL_CONNECTIONS
+  percent_chance 34 #define TEAM_CONNECTIONS
+ end_random
+endif
+ 
+start_random
+ percent_chance 33 #define NARROW_CONNECTIONS
+ percent_chance 34 #define WIDE_CONNECTIONS
+ percent_chance 33 #define MEDIUM_CONNECTIONS
+end_random
+
+start_random
+ percent_chance 33 #define WATER_MAP
+ percent_chance 33 #define FOREST_MAP
+ percent_chance 34 #define LAND_MAP  
+end_random
+
+start_random
+ percent_chance 25 #define GRASS_TILE
+ percent_chance 25 #define TROPICAL_TILE
+ percent_chance 25 #define SNOW_TILE
+ percent_chance 25 #define DESERT_TILE
+end_random
+
+start_random
+ percent_chance 20 #define NO_AVOIDANCE
+ percent_chance 20 #define SMALL_AVOIDANCE
+ percent_chance 20 #define MEDIUM_AVOIDANCE
+ percent_chance 20 #define LARGE_AVOIDANCE
+ percent_chance 20 #define XLARGE_AVOIDANCE
+end_random
+
+start_random
+ percent_chance 20 #define NO_TOP
+ percent_chance 20 #define SMALL_TOP
+ percent_chance 20 #define MEDIUM_TOP
+ percent_chance 20 #define LARGE_TOP
+ percent_chance 20 #define XLARGE_TOP
+end_random
+
+if NO_TOP
+ #define NO_BOTTOM
+elseif SMALL_TOP
+ #define SMALL_BOTTOM
+elseif MEDIUM_TOP
+ #define MEDIUM_BOTTOM
+elseif LARGE_TOP
+ #define LARGE_BOTTOM
+elseif XLARGE_TOP
+ #define XLARGE_BOTTOM
+endif
+
+start_random
+ percent_chance 20 #define NO_LEFT
+ percent_chance 20 #define SMALL_LEFT
+ percent_chance 20 #define MEDIUM_LEFT
+ percent_chance 20 #define LARGE_LEFT
+ percent_chance 20 #define XLARGE_LEFT
+end_random
+
+if     NO_LEFT     #define NO_RIGHT
+elseif SMALL_LEFT  #define SMALL_RIGHT
+elseif MEDIUM_LEFT #define MEDIUM_RIGHT
+elseif LARGE_LEFT  #define LARGE_RIGHT
+elseif XLARGE_LEFT #define XLARGE_RIGHT
+endif
+
+if GIGANTIC_MAP /* fix for zone overflow */
+ #define BORDER1
+ #define CLUMPING4
+else
+ start_random
+  percent_chance 25 #define BORDER1
+  percent_chance 25 #define BORDER2
+  percent_chance 25 #define BORDER3
+  percent_chance 25 #define BORDER4
+ end_random
+ start_random
+  percent_chance 25 #define CLUMPING1
+  percent_chance 25 #define CLUMPING2
+  percent_chance 25 #define CLUMPING3
+  percent_chance 25 #define CLUMPING4
+ end_random
+endif
+
+start_random
+ percent_chance 25 #define SINGLE_ZONE
+ percent_chance 25 #define SEPARATE_ZONE
+ percent_chance 25 #define RANDOM_ZONE
+ percent_chance 25 #define TEAM_ZONE
+end_random
+
+start_random
+ percent_chance 25 #define SMALL_BASE_SIZE
+ percent_chance 25 #define MEDIUM_BASE_SIZE
+ percent_chance 25 #define LARGE_BASE_SIZE
+ percent_chance 25 #define XLARGE_BASE_SIZE
+end_random
+
+start_random
+ percent_chance 50 #define OTHERLARGE_1
+end_random
+start_random
+ percent_chance 50 #define OTHERMEDIUM_1
+end_random
+start_random
+ percent_chance 50 #define OTHERMEDIUM_2
+end_random
+start_random
+ percent_chance 50 #define OTHERMEDIUM_3
+end_random
+start_random
+ percent_chance 50 #define OTHERSMALL_1
+end_random
+start_random
+ percent_chance 50 #define OTHERSMALL_2
+end_random
+start_random
+ percent_chance 50 #define OTHERSMALL_3
+end_random
+start_random
+ percent_chance 50 #define OTHERSMALL_4
+end_random
+start_random
+ percent_chance 50 #define OTHERSMALL_5
+end_random
+start_random
+ percent_chance 50 #define SMALL_FOREST_LAKE1
+end_random
+start_random
+ percent_chance 50 #define SMALL_FOREST_LAKE2
+end_random
+start_random
+ percent_chance 50 #define SMALL_FOREST_LAKE3
+end_random
+start_random
+ percent_chance 50 #define MEDIUM_FOREST_LAKE1
+end_random
+start_random
+ percent_chance 50 #define MEDIUM_FOREST_LAKE2
+end_random
+start_random
+ percent_chance 50 #define LARGE_FOREST_LAKE1
+end_random
+
+start_random
+ percent_chance 25 #define SMALL_FOREST_LAKE_SIZE
+ percent_chance 25 #define MEDIUM_FOREST_LAKE_SIZE
+ percent_chance 25 #define LARGE_FOREST_LAKE_SIZE
+ percent_chance 25 #define XLARGE_FOREST_LAKE_SIZE
+end_random
+
+start_random
+ percent_chance 50 #define FROZEN_LAKES
+ percent_chance 50 #define THAWED_LAKES
+end_random
+
+start_random
+ percent_chance 25 #define SMALL_OTHER_LAND_SIZE
+ percent_chance 25 #define MEDIUM_OTHER_LAND_SIZE
+ percent_chance 25 #define LARGE_OTHER_LAND_SIZE
+ percent_chance 25 #define XLARGE_OTHER_LAND_SIZE
+end_random
+
+/*
+start_random
+ percent_chance 0 #define KF_ELEVATION_ZERO
+ percent_chance 0 #define KF_ELEVATION_ONE
+ percent_chance 0 #define KF_ELEVATION_TWO
+ percent_chance 0 #define KF_ELEVATION_THREE
+ percent_chance 0 #define KF_ELEVATION_FOUR
+ percent_chance 0 #define KF_ELEVATION_FIVE
+ percent_chance 0 #define KF_ELEVATION_SIX
+ percent_chance 100 #define KF_ELEVATION_SEVEN
+end_random
+*/
+
+start_random
+ percent_chance 12 #define KF_ELEVATION_ZERO
+ percent_chance 12 #define KF_ELEVATION_ONE
+ percent_chance 12 #define KF_ELEVATION_TWO
+ percent_chance 12 #define KF_ELEVATION_THREE
+ percent_chance 13 #define KF_ELEVATION_FOUR
+ percent_chance 13 #define KF_ELEVATION_FIVE
+ percent_chance 13 #define KF_ELEVATION_SIX
+ percent_chance 13 #define KF_ELEVATION_SEVEN
+end_random
+
+start_random
+ percent_chance 25 #define KF_NO_CLUMPS
+ percent_chance 25 #define KF_LOW_CLUMPS
+ percent_chance 25 #define KF_MEDIUM_CLUMPS
+ percent_chance 25 #define KF_HIGH_CLUMPS
+end_random
+
+start_random
+ percent_chance 20 #define VERY_HIGH_CLIFF
+ percent_chance 20 #define HIGH_CLIFF
+ percent_chance 20 #define LOW_CLIFF
+ percent_chance 20 #define NORMAL_CLIFF
+ percent_chance 20 #define NO_CLIFF
+end_random
+
+start_random
+ percent_chance 10 #define LAND1
+ percent_chance 10 #define LAND2
+ percent_chance 10 #define LAND3
+ percent_chance 10 #define LAND4
+ percent_chance 10 #define LAND5
+ percent_chance 10 #define LAND6
+ percent_chance 10 #define LAND7
+ percent_chance 10 #define LAND8
+ percent_chance 10 #define LAND9
+ percent_chance 10 #define LAND10
+end_random
+
+/* ******************************************************************* */
+/* Forest Level                                                        */
+/* ******************************************************************* */
+
+if LAND_MAP
+ start_random
+  percent_chance 25 #define STANDARD_FOREST
+  percent_chance 25 #define HIGH_FOREST
+  percent_chance 25 #define EXTRA_HIGH_FOREST
+  percent_chance 25 #define LOW_FOREST
+ end_random
+else
+ if LAND1
+  start_random
+   percent_chance 10 #define STANDARD_FOREST
+   percent_chance  0 #define HIGH_FOREST
+   percent_chance  0 #define EXTRA_HIGH_FOREST
+   percent_chance 90 #define LOW_FOREST
+   end_random
+ elseif LAND2
+  start_random
+   percent_chance 50 #define STANDARD_FOREST
+   percent_chance  0 #define HIGH_FOREST
+   percent_chance  0 #define EXTRA_HIGH_FOREST
+   percent_chance 50 #define LOW_FOREST
+  end_random
+ elseif LAND3
+  start_random
+   percent_chance 60 #define STANDARD_FOREST
+   percent_chance  0 #define HIGH_FOREST
+   percent_chance  0 #define EXTRA_HIGH_FOREST
+   percent_chance 40 #define LOW_FOREST
+  end_random
+ elseif LAND4
+  start_random
+   percent_chance 60 #define STANDARD_FOREST
+   percent_chance  5 #define HIGH_FOREST
+   percent_chance  0 #define EXTRA_HIGH_FOREST
+   percent_chance 35 #define LOW_FOREST
+  end_random
+ else
+  start_random
+   percent_chance 50 #define STANDARD_FOREST
+   percent_chance 28 #define HIGH_FOREST
+   percent_chance 2 #define EXTRA_HIGH_FOREST
+   percent_chance 20 #define LOW_FOREST
+  end_random
+ endif
+endif
+
+start_random
+ percent_chance 15 #define LOW_FOREST_CLUMPS
+ percent_chance 60 #define NORMAL_FOREST_CLUMPS
+ percent_chance 25 #define HIGH_FOREST_CLUMPS
+end_random
+
+if LAND_MAP
+ start_random
+  percent_chance 50 #define STANDARD_PLAYER_TREES
+  percent_chance 28 #define HIGH_PLAYER_TREES
+  percent_chance 2 #define EXTRA_HIGH_PLAYER_TREES
+  percent_chance 20 #define LOW_PLAYER_TREES
+ end_random
+else
+ if LAND10
+  start_random
+   percent_chance  0 #define STANDARD_PLAYER_TREES
+   percent_chance  0 #define HIGH_PLAYER_TREES
+   percent_chance  0 #define EXTRA_HIGH_PLAYER_TREES
+   percent_chance 100 #define LOW_PLAYER_TREES
+  end_random
+ elseif LAND9
+  start_random
+   percent_chance 50 #define STANDARD_PLAYER_TREES
+   percent_chance  0 #define HIGH_PLAYER_TREES
+   percent_chance  0 #define EXTRA_HIGH_PLAYER_TREES
+   percent_chance 50 #define LOW_PLAYER_TREES
+  end_random
+ elseif LAND8
+  start_random
+   percent_chance 60 #define STANDARD_PLAYER_TREES
+   percent_chance  0 #define HIGH_PLAYER_TREES
+   percent_chance  0 #define EXTRA_HIGH_PLAYER_TREES
+   percent_chance 40 #define LOW_PLAYER_TREES
+  end_random
+ elseif LAND7
+  start_random
+   percent_chance 60 #define STANDARD_PLAYER_TREES
+   percent_chance 10 #define HIGH_PLAYER_TREES
+   percent_chance  0 #define EXTRA_HIGH_PLAYER_TREES
+   percent_chance 30 #define LOW_PLAYER_TREES
+  end_random
+ else
+  start_random
+   percent_chance 50 #define STANDARD_PLAYER_TREES
+   percent_chance 28 #define HIGH_PLAYER_TREES
+   percent_chance  2 #define EXTRA_HIGH_PLAYER_TREES
+   percent_chance 20 #define LOW_PLAYER_TREES
+  end_random
+ endif
+endif
+
+start_random
+ percent_chance 20 #define STANDARD_PATCH
+ percent_chance 20 #define HIGH_PATCH
+ percent_chance 20 #define EXTRA_HIGH_PATCH
+ percent_chance 20 #define LOW_PATCH
+ percent_chance 20 #define EXTRA_LOW_PATCH
+end_random
+start_random
+ percent_chance 33 #define LOW_PATCH_CLUMPS
+ percent_chance 34 #define NORMAL_PATCH_CLUMPS
+ percent_chance 33 #define HIGH_PATCH_CLUMPS
+end_random
+
+/* 4*17+2*16 */
+start_random
+ percent_chance 20 #define STANDARD_FORAGE_GROUPS
+ percent_chance 20 #define HIGH_FORAGE_GROUPS
+ percent_chance 20 #define EXTRA_HIGH_FORAGE_GROUPS
+ percent_chance 20 #define LOW_FORAGE_GROUPS
+ percent_chance 20 #define EXTRA_LOW_FORAGE_GROUPS
+ percent_chance 0 #define NO_FORAGE_GROUPS
+end_random
+start_random
+ percent_chance 20 #define STANDARD_FORAGE
+ percent_chance 20 #define HIGH_FORAGE
+ percent_chance 20 #define EXTRA_HIGH_FORAGE
+ percent_chance 20 #define LOW_FORAGE
+ percent_chance 20 #define EXTRA_LOW_FORAGE
+end_random
+start_random
+ percent_chance 17 #define STANDARD_RANDOM_FORAGE
+ percent_chance 17 #define HIGH_RANDOM_FORAGE
+ percent_chance 17 #define EXTRA_HIGH_RANDOM_FORAGE
+ percent_chance 17 #define LOW_RANDOM_FORAGE
+ percent_chance 16 #define EXTRA_LOW_RANDOM_FORAGE
+ percent_chance 16 #define NO_RANDOM_FORAGE
+end_random
+
+start_random
+ percent_chance 17 #define STANDARD_SHEEP_GROUPS
+ percent_chance 17 #define HIGH_SHEEP_GROUPS
+ percent_chance 17 #define EXTRA_HIGH_SHEEP_GROUPS
+ percent_chance 17 #define LOW_SHEEP_GROUPS
+ percent_chance 16 #define EXTRA_LOW_SHEEP_GROUPS
+ percent_chance 16 #define NO_SHEEP_GROUPS
+end_random
+start_random
+ percent_chance 20 #define STANDARD_SHEEP
+ percent_chance 20 #define HIGH_SHEEP
+ percent_chance 20 #define EXTRA_HIGH_SHEEP
+ percent_chance 20 #define LOW_SHEEP
+ percent_chance 20 #define EXTRA_LOW_SHEEP
+end_random
+
+start_random
+ percent_chance 17 #define STANDARD_DEER_GROUPS
+ percent_chance 17 #define HIGH_DEER_GROUPS
+ percent_chance 17 #define EXTRA_HIGH_DEER_GROUPS
+ percent_chance 17 #define LOW_DEER_GROUPS
+ percent_chance 16 #define EXTRA_LOW_DEER_GROUPS
+ percent_chance 16 #define NO_DEER_GROUPS
+end_random
+start_random
+ percent_chance 17 #define STANDARD_DEER
+ percent_chance 17 #define HIGH_DEER
+ percent_chance 17 #define EXTRA_HIGH_DEER
+ percent_chance 17 #define LOW_DEER
+ percent_chance 16 #define EXTRA_LOW_DEER
+ percent_chance 16 #define GIT_DEER
+end_random
+
+start_random
+ percent_chance 17 #define STANDARD_BOAR_GROUPS
+ percent_chance 17 #define HIGH_BOAR_GROUPS
+ percent_chance 17 #define EXTRA_HIGH_BOAR_GROUPS
+ percent_chance 17 #define LOW_BOAR_GROUPS
+ percent_chance 16 #define EXTRA_LOW_BOAR_GROUPS
+ percent_chance 16 #define NO_BOAR_GROUPS
+end_random
+start_random
+ percent_chance 20 #define STANDARD_BOAR
+ percent_chance 20 #define HIGH_BOAR
+ percent_chance 20 #define EXTRA_HIGH_BOAR
+ percent_chance 20 #define LOW_BOAR
+ percent_chance 20 #define EXTRA_LOW_BOAR
+end_random
+
+start_random
+ percent_chance 17 #define STANDARD_SHORE_FISH
+ percent_chance 17 #define HIGH_SHORE_FISH
+ percent_chance 17 #define EXTRA_HIGH_SHORE_FISH
+ percent_chance 17 #define LOW_SHORE_FISH
+ percent_chance 16 #define EXTRA_LOW_SHORE_FISH
+ percent_chance 16 #define NO_SHORE_FISH
+end_random
+
+start_random
+ percent_chance 17 #define STANDARD_FISH
+ percent_chance 17 #define HIGH_FISH
+ percent_chance 17 #define EXTRA_HIGH_FISH
+ percent_chance 17 #define LOW_FISH
+ percent_chance 16 #define EXTRA_LOW_FISH
+ percent_chance 16 #define NO_FISH
+end_random
+
+start_random
+ percent_chance 17 #define STANDARD_MARLIN
+ percent_chance 17 #define HIGH_MARLIN
+ percent_chance 17 #define EXTRA_HIGH_MARLIN
+ percent_chance 17 #define LOW_MARLIN
+ percent_chance 16 #define EXTRA_LOW_MARLIN
+ percent_chance 16 #define NO_MARLIN
+end_random
+
+if KF_NOMAD
+else
+ start_random
+  percent_chance 17 #define STANDARD_WOLVES
+  percent_chance 17 #define HIGH_WOLVES
+  percent_chance 16 #define EXTRA_HIGH_WOLVES
+  percent_chance 17 #define LOW_WOLVES
+  percent_chance 16 #define EXTRA_LOW_WOLVES
+  percent_chance 17 #define NO_WOLVES
+ end_random
+endif
+
+start_random
+ percent_chance 25 #define STANDARD_PLAYER_GOLD
+ percent_chance 25 #define HIGH_PLAYER_GOLD
+ percent_chance 25 #define EXTRA_HIGH_PLAYER_GOLD
+ percent_chance 25 #define LOW_PLAYER_GOLD
+end_random
+start_random
+ percent_chance 17 #define STANDARD_RANDOM_GOLD
+ percent_chance 17 #define HIGH_RANDOM_GOLD
+ percent_chance 17 #define EXTRA_HIGH_RANDOM_GOLD
+ percent_chance 17 #define LOW_RANDOM_GOLD
+ percent_chance 16 #define EXTRA_LOW_RANDOM_GOLD
+ percent_chance 16 #define NO_RANDOM_GOLD
+end_random
+
+start_random
+ percent_chance 20 #define STANDARD_PLAYER_STONE
+ percent_chance 16 #define HIGH_PLAYER_STONE
+ percent_chance 16 #define EXTRA_HIGH_PLAYER_STONE
+ percent_chance 16 #define LOW_PLAYER_STONE
+ percent_chance 16 #define EXTRA_LOW_PLAYER_STONE
+ percent_chance 16 #define NO_PLAYER_STONE
+end_random
+start_random
+ percent_chance 20 #define STANDARD_RANDOM_STONE
+ percent_chance 16 #define HIGH_RANDOM_STONE
+ percent_chance 16 #define EXTRA_HIGH_RANDOM_STONE
+ percent_chance 16 #define LOW_RANDOM_STONE
+ percent_chance 16 #define EXTRA_LOW_RANDOM_STONE
+ percent_chance 16 #define NO_RANDOM_STONE
+end_random
+
+start_random
+ percent_chance 20 #define STANDARD_RELIC
+ percent_chance 16 #define HIGH_RELIC
+ percent_chance 16 #define EXTRA_HIGH_RELIC
+ percent_chance 16 #define LOW_RELIC
+ percent_chance 16 #define EXTRA_LOW_RELIC
+ percent_chance 16 #define NO_RELIC
+end_random
+
+/* ******************************************************************* */
+/* Land Generation                                                     */
+/* ******************************************************************* */
+
+<LAND_GENERATION>
+
+if WATER_MAP
+ base_terrain WATER
+elseif LAND_MAP
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain SNOW
+ elseif DESERT_TILE   base_terrain DESERT
+ endif
+elseif FOREST_MAP
+ if     GRASS_TILE    base_terrain FOREST
+ elseif TROPICAL_TILE base_terrain JUNGLE
+ elseif SNOW_TILE     base_terrain SNOW_FOREST
+ elseif DESERT_TILE   base_terrain PALM_DESERT
+   endif
+endif
+
+if OTHERLARGE_1
+ create_land
+ {
+ if WATER_MAP
+  if GRASS_TILE        terrain_type GRASS
+  elseif TROPICAL_TILE terrain_type GRASS3
+  elseif SNOW_TILE     terrain_type GRASS_SNOW
+  elseif DESERT_TILE   terrain_type DIRT
+  endif 
+ elseif FOREST_MAP
+  if     GRASS_TILE    terrain_type GRASS
+  elseif TROPICAL_TILE terrain_type GRASS3
+  elseif SNOW_TILE     terrain_type GRASS_SNOW
+  elseif DESERT_TILE   terrain_type DIRT
+  endif
+ elseif LAND_MAP
+  if SNOW_TILE
+   if FROZEN_LAKES
+    terrain_type ICE
+   else
+    terrain_type WATER
+   endif
+  else
+   terrain_type WATER
+  endif
+ endif
+ if     SMALL_OTHER_LAND_SIZE  land_percent  18
+ elseif MEDIUM_OTHER_LAND_SIZE land_percent  20
+ elseif LARGE_OTHER_LAND_SIZE  land_percent  22
+ elseif XLARGE_OTHER_LAND_SIZE land_percent  24
+ endif
+ if     BORDER1 border_fuzziness 4
+ elseif BORDER2 border_fuzziness 7
+ elseif BORDER3 border_fuzziness 10
+ elseif BORDER4 border_fuzziness 13
+ endif
+ if     CLUMPING1 clumping_factor 3
+ elseif CLUMPING2 clumping_factor 6
+ elseif CLUMPING3 clumping_factor 9
+ elseif CLUMPING4 clumping_factor 12
+ endif
+ }
+endif
+
+if OTHERMEDIUM_1
+ create_land
+ {
+ if WATER_MAP
+  if     GRASS_TILE    terrain_type GRASS
+  elseif TROPICAL_TILE terrain_type GRASS3
+  elseif SNOW_TILE     terrain_type GRASS_SNOW
+  elseif DESERT_TILE   terrain_type DIRT
+  endif 
+ elseif FOREST_MAP
+  if     GRASS_TILE    terrain_type GRASS
+  elseif TROPICAL_TILE terrain_type GRASS3
+  elseif SNOW_TILE     terrain_type GRASS_SNOW
+  elseif DESERT_TILE   terrain_type DIRT
+  endif 
+ elseif LAND_MAP
+  if SNOW_TILE
+   if FROZEN_LAKES
+    terrain_type ICE
+   else
+    terrain_type WATER
+   endif
+  else
+   terrain_type WATER
+  endif
+ endif
+ if     SMALL_OTHER_LAND_SIZE  land_percent  10
+ elseif MEDIUM_OTHER_LAND_SIZE land_percent  12
+ elseif LARGE_OTHER_LAND_SIZE  land_percent  14
+ elseif XLARGE_OTHER_LAND_SIZE land_percent  16
+ endif
+ if     BORDER1 border_fuzziness 4
+ elseif BORDER2 border_fuzziness 7
+ elseif BORDER3 border_fuzziness 10
+ elseif BORDER4 border_fuzziness 13
+ endif
+ if     CLUMPING1 clumping_factor 3
+ elseif CLUMPING2 clumping_factor 6
+ elseif CLUMPING3 clumping_factor 9
+ elseif CLUMPING4 clumping_factor 12
+ endif
+ }
+endif
+
+if OTHERMEDIUM_2
+ create_land
+ {
+ if WATER_MAP
+  if     GRASS_TILE    terrain_type GRASS
+  elseif TROPICAL_TILE terrain_type GRASS3
+  elseif SNOW_TILE     terrain_type GRASS_SNOW
+  elseif DESERT_TILE   terrain_type DIRT
+  endif
+ elseif FOREST_MAP
+  if     GRASS_TILE    terrain_type GRASS
+  elseif TROPICAL_TILE terrain_type GRASS3
+  elseif SNOW_TILE     terrain_type GRASS_SNOW
+  elseif DESERT_TILE   terrain_type DIRT
+  endif
+ elseif LAND_MAP
+  if SNOW_TILE 
+   if FROZEN_LAKES terrain_type ICE
+   else            terrain_type WATER
+   endif
+  else terrain_type WATER
+  endif
+ endif
+ if SMALL_OTHER_LAND_SIZE
+      land_percent  16
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  14
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  12
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  10
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if OTHERMEDIUM_3
+create_land
+{
+   if WATER_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif FOREST_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif LAND_MAP
+      if SNOW_TILE
+         if FROZEN_LAKES
+            terrain_type ICE
+         else
+            terrain_type WATER
+         endif
+      else
+      terrain_type WATER
+      endif
+   endif
+   
+   if SMALL_OTHER_LAND_SIZE
+      land_percent  12
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  10
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  16
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  14
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if OTHERSMALL_1
+create_land
+{
+   if WATER_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif FOREST_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif LAND_MAP
+      if SNOW_TILE
+         if FROZEN_LAKES
+            terrain_type ICE
+         else
+            terrain_type WATER
+         endif
+      else
+      terrain_type WATER
+      endif
+   endif
+   
+   if SMALL_OTHER_LAND_SIZE
+      land_percent  5
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  6
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  7
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  8
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if OTHERSMALL_2
+create_land
+{
+   if WATER_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif FOREST_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif LAND_MAP
+      if SNOW_TILE
+         if FROZEN_LAKES
+            terrain_type ICE
+         else
+            terrain_type WATER
+         endif
+      else
+      terrain_type WATER
+      endif
+   endif
+   
+   if SMALL_OTHER_LAND_SIZE
+      land_percent  5
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  6
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  7
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  8
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if OTHERSMALL_3
+create_land
+{
+   if WATER_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif FOREST_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif LAND_MAP
+      if SNOW_TILE
+         if FROZEN_LAKES
+            terrain_type ICE
+         else
+            terrain_type WATER
+         endif
+      else
+      terrain_type WATER
+      endif
+   endif
+   
+   if SMALL_OTHER_LAND_SIZE
+      land_percent  6
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  7
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  8
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  5
+   endif
+if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if OTHERSMALL_4
+create_land
+{
+   if WATER_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif FOREST_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif LAND_MAP
+      if SNOW_TILE
+         if FROZEN_LAKES
+            terrain_type ICE
+         else
+            terrain_type WATER
+         endif
+      else
+      terrain_type WATER
+      endif
+   endif
+   
+   if SMALL_OTHER_LAND_SIZE
+      land_percent  7
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  8
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  5
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  6
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if OTHERSMALL_5
+create_land
+{
+   if WATER_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif FOREST_MAP
+      if GRASS_TILE
+         terrain_type GRASS
+      elseif TROPICAL_TILE
+         terrain_type GRASS3
+      elseif SNOW_TILE
+         terrain_type GRASS_SNOW
+      elseif DESERT_TILE
+         terrain_type DIRT
+      endif 
+   elseif LAND_MAP
+      if SNOW_TILE
+         if FROZEN_LAKES
+            terrain_type ICE
+         else
+            terrain_type WATER
+         endif
+      else
+      terrain_type WATER
+      endif
+   endif
+   
+   if SMALL_OTHER_LAND_SIZE
+      land_percent  8
+   elseif MEDIUM_OTHER_LAND_SIZE
+      land_percent  7
+   elseif LARGE_OTHER_LAND_SIZE
+      land_percent  6
+   elseif XLARGE_OTHER_LAND_SIZE
+      land_percent  5
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if FOREST_MAP
+
+if SMALL_FOREST_LAKE1
+create_land
+{
+   if SNOW_TILE
+      if FROZEN_LAKES
+         terrain_type ICE
+      else
+         terrain_type WATER
+      endif
+   else
+      terrain_type WATER
+   endif
+      
+   if SMALL_FOREST_LAKE_SIZE
+      land_percent 1
+   elseif MEDIUM_FOREST_LAKE_SIZE
+      land_percent 2
+   elseif LARGE_FOREST_LAKE_SIZE
+      land_percent 3
+   elseif XLARGE_FOREST_LAKE_SIZE
+      land_percent 4
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if SMALL_FOREST_LAKE2
+create_land
+{
+   if SNOW_TILE
+      if FROZEN_LAKES
+         terrain_type ICE
+      else
+         terrain_type WATER
+      endif
+   else
+      terrain_type WATER
+   endif
+      
+   if SMALL_FOREST_LAKE_SIZE
+      land_percent 4
+   elseif MEDIUM_FOREST_LAKE_SIZE
+      land_percent 3
+   elseif LARGE_FOREST_LAKE_SIZE
+      land_percent 2
+   elseif XLARGE_FOREST_LAKE_SIZE
+      land_percent 1
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if SMALL_FOREST_LAKE3
+create_land
+{
+   if SNOW_TILE
+      if FROZEN_LAKES
+         terrain_type ICE
+      else
+         terrain_type WATER
+      endif
+   else
+      terrain_type WATER
+   endif
+      
+   if SMALL_FOREST_LAKE_SIZE
+      land_percent 2
+   elseif MEDIUM_FOREST_LAKE_SIZE
+      land_percent 1
+   elseif LARGE_FOREST_LAKE_SIZE
+      land_percent 4
+   elseif XLARGE_FOREST_LAKE_SIZE
+      land_percent 3
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if MEDIUM_FOREST_LAKE1
+create_land
+{
+   if SNOW_TILE
+      if FROZEN_LAKES
+         terrain_type ICE
+      else
+         terrain_type WATER
+      endif
+   else
+      terrain_type WATER
+   endif
+      
+   if SMALL_FOREST_LAKE_SIZE
+      land_percent 1
+   elseif MEDIUM_FOREST_LAKE_SIZE
+      land_percent 2
+   elseif LARGE_FOREST_LAKE_SIZE
+      land_percent 4
+   elseif XLARGE_FOREST_LAKE_SIZE
+      land_percent 6
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if MEDIUM_FOREST_LAKE2
+create_land
+{
+   if SNOW_TILE
+      if FROZEN_LAKES
+         terrain_type ICE
+      else
+         terrain_type WATER
+      endif
+   else
+      terrain_type WATER
+   endif
+      
+   if SMALL_FOREST_LAKE_SIZE
+      land_percent 5
+   elseif MEDIUM_FOREST_LAKE_SIZE
+      land_percent 4
+   elseif LARGE_FOREST_LAKE_SIZE
+      land_percent 3
+   elseif XLARGE_FOREST_LAKE_SIZE
+      land_percent 2
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+
+if LARGE_FOREST_LAKE1
+create_land
+{
+   if SNOW_TILE
+      if FROZEN_LAKES
+         terrain_type ICE
+      else
+         terrain_type WATER
+      endif
+   else
+      terrain_type WATER
+   endif
+      
+   if SMALL_FOREST_LAKE_SIZE
+      land_percent 2
+   elseif MEDIUM_FOREST_LAKE_SIZE
+      land_percent 4
+   elseif LARGE_FOREST_LAKE_SIZE
+      land_percent 6
+   elseif XLARGE_FOREST_LAKE_SIZE
+      land_percent 9
+   endif
+
+   if BORDER1
+      border_fuzziness                 4
+   elseif BORDER2
+      border_fuzziness                 7
+   elseif BORDER3
+      border_fuzziness                 10
+   elseif BORDER4
+      border_fuzziness                 13
+   endif
+   
+   if CLUMPING1
+      clumping_factor                  3
+   elseif CLUMPING2
+      clumping_factor                  6
+   elseif CLUMPING3
+      clumping_factor                  9
+   elseif CLUMPING4
+      clumping_factor                  12
+   endif
+}
+endif
+endif
+
+/* PLAYER LANDS */
+if REAL_NOMAD
+create_player_lands
+{
+ if GRASS_TILE
+      terrain_type GRASS
+   elseif TROPICAL_TILE
+      terrain_type GRASS3
+   elseif SNOW_TILE
+      terrain_type GRASS_SNOW
+   elseif DESERT_TILE
+      terrain_type DIRT
+   endif
+ if     LAND1
+  land_percent 80
+ elseif LAND2
+  land_percent 78
+ elseif LAND3
+  land_percent 72
+ elseif LAND4
+  land_percent 66
+ elseif LAND5
+  land_percent 60
+ elseif LAND6
+  land_percent 54
+ elseif LAND7
+  land_percent 48
+ elseif LAND8
+  land_percent 42
+ elseif LAND9
+  land_percent 36
+ elseif LAND10
+  land_percent 30
+ endif
+ base_size 15
+ if BORDER1
+  border_fuzziness 4
+ elseif BORDER2
+  border_fuzziness 7
+ elseif BORDER3
+  border_fuzziness 10
+ elseif BORDER4
+  border_fuzziness 13
+ endif
+ if CLUMPING1
+  clumping_factor 3
+ elseif CLUMPING2
+  clumping_factor 6
+ elseif CLUMPING3
+  clumping_factor 9
+ elseif CLUMPING4
+  clumping_factor 12
+ endif
+ if SMALL_AVOIDANCE
+  other_zone_avoidance_distance 4
+ elseif MEDIUM_AVOIDANCE
+  other_zone_avoidance_distance 8
+ elseif LARGE_AVOIDANCE
+  other_zone_avoidance_distance 12
+ elseif XLARGE_AVOIDANCE
+  other_zone_avoidance_distance 16
+ elseif NO_AVOIDANCE
+  other_zone_avoidance_distance 0
+ endif
+}
+else
+create_player_lands 
+{ 
+ if GRASS_TILE
+      terrain_type GRASS
+   elseif TROPICAL_TILE
+      terrain_type GRASS3
+   elseif SNOW_TILE
+      terrain_type GRASS_SNOW
+   elseif DESERT_TILE
+      terrain_type DIRT
+   endif
+ if LAND1
+  land_percent 80
+ elseif LAND2
+  land_percent 78
+ elseif LAND3
+  land_percent 72
+ elseif LAND4
+  land_percent 66
+ elseif LAND5
+  land_percent 60
+ elseif LAND6
+  land_percent 54
+ elseif LAND7
+  land_percent 48
+ elseif LAND8
+  land_percent 42
+ elseif LAND9
+  land_percent 36
+ elseif LAND10
+  land_percent 30
+ endif
+ if SMALL_BASE_SIZE
+  base_size 18
+ elseif MEDIUM_BASE_SIZE
+  base_size 20
+ elseif LARGE_BASE_SIZE
+  base_size 22
+ elseif XLARGE_BASE_SIZE
+  base_size 24
+ endif
+ if BORDER1
+  border_fuzziness 4
+ elseif BORDER2
+  border_fuzziness 7
+ elseif BORDER3
+  border_fuzziness 10
+ elseif BORDER4
+  border_fuzziness 13
+ endif
+ if CLUMPING1
+  clumping_factor 3
+ elseif CLUMPING2
+  clumping_factor 6
+ elseif CLUMPING3
+  clumping_factor 9
+ elseif CLUMPING4
+  clumping_factor 12
+ endif
+ if SMALL_AVOIDANCE
+  other_zone_avoidance_distance 4
+ elseif MEDIUM_AVOIDANCE
+  other_zone_avoidance_distance 8
+ elseif LARGE_AVOIDANCE
+  other_zone_avoidance_distance 12
+ elseif XLARGE_AVOIDANCE
+  other_zone_avoidance_distance 16
+ elseif NO_AVOIDANCE
+  other_zone_avoidance_distance 0
+ endif
+ if TEAM_ZONE
+  set_zone_by_team
+ elseif RANDOM_ZONE
+  set_zone_randomly
+ elseif SEPARATE_ZONE
+ elseif SINGLE_ZONE
+  zone 1
+ endif
+if NO_LEFT
+   left_border   0
+elseif SMALL_LEFT
+   left_border   3
+elseif MEDIUM_LEFT
+   left_border   6
+elseif LARGE_LEFT
+   left_border   9
+elseif XLARGE_LEFT
+   left_border   12
+endif
+
+if NO_RIGHT
+   right_border   0
+elseif SMALL_RIGHT
+   right_border   3
+elseif MEDIUM_RIGHT
+   right_border   6
+elseif LARGE_RIGHT
+   right_border   9
+elseif XLARGE_RIGHT
+   right_border   12
+endif
+
+if NO_TOP
+   top_border   0
+elseif SMALL_TOP
+   top_border   3
+elseif MEDIUM_TOP
+   top_border   6
+elseif LARGE_TOP
+   top_border   9
+elseif XLARGE_TOP
+   top_border   12
+endif
+
+if NO_BOTTOM
+   bottom_border   0
+elseif SMALL_BOTTOM
+   bottom_border   3
+elseif MEDIUM_BOTTOM
+   bottom_border   6
+elseif LARGE_BOTTOM
+   bottom_border   9
+elseif XLARGE_BOTTOM
+   bottom_border   12
+endif
+
+}
+endif
+ 
+<TERRAIN_GENERATION>
+
+if WATER_MAP
+else
+create_terrain MED_WATER
+{
+ base_terrain WATER
+ number_of_clumps 3
+ spacing_to_other_terrain_types 3
+ land_percent 3
+ set_scale_by_groups
+}
+create_terrain DEEP_WATER
+{
+ base_terrain MED_WATER
+ number_of_clumps 6
+ spacing_to_other_terrain_types 5
+ land_percent 2
+ set_scale_by_groups
+}
+endif
+
+if GRASS_TILE
+   create_terrain FOREST
+elseif TROPICAL_TILE
+   create_terrain JUNGLE
+elseif SNOW_TILE
+   create_terrain SNOW_FOREST
+elseif DESERT_TILE
+   create_terrain PALM_DESERT
+endif
+{
+  if GRASS_TILE
+     base_terrain                GRASS
+  elseif TROPICAL_TILE
+     base_terrain                GRASS3
+  elseif SNOW_TILE
+     base_terrain                GRASS_SNOW
+  elseif DESERT_TILE
+     base_terrain                DIRT
+  endif
+spacing_to_other_terrain_types 4
+if LAND10
+ if STANDARD_FOREST
+  land_percent 6
+ elseif HIGH_FOREST
+  land_percent 7
+ elseif EXTRA_HIGH_FOREST
+  land_percent 8
+ elseif LOW_FOREST
+  land_percent 5
+ endif
+elseif LAND9
+ if STANDARD_FOREST
+  land_percent 7
+ elseif HIGH_FOREST
+  land_percent 8
+ elseif EXTRA_HIGH_FOREST
+  land_percent 9
+ elseif LOW_FOREST
+  land_percent 6
+ endif
+elseif LAND8
+ if STANDARD_FOREST
+  land_percent 8
+ elseif HIGH_FOREST
+  land_percent 9
+ elseif EXTRA_HIGH_FOREST
+  land_percent 10
+ elseif LOW_FOREST
+  land_percent 7
+ endif
+elseif LAND7
+ if STANDARD_FOREST
+  land_percent 9
+ elseif HIGH_FOREST
+  land_percent 10
+ elseif EXTRA_HIGH_FOREST
+  land_percent 11
+ elseif LOW_FOREST
+  land_percent 8
+ endif
+elseif LAND6
+ if STANDARD_FOREST
+  land_percent 10
+ elseif HIGH_FOREST
+  land_percent 11
+ elseif EXTRA_HIGH_FOREST
+  land_percent 12
+ elseif LOW_FOREST
+  land_percent 9
+ endif
+elseif LAND5 
+ if STANDARD_FOREST
+  land_percent 11
+ elseif HIGH_FOREST
+  land_percent 12
+ elseif EXTRA_HIGH_FOREST
+  land_percent 13
+ elseif LOW_FOREST
+  land_percent 10
+ endif
+elseif LAND4
+ if STANDARD_FOREST
+  land_percent 12
+ elseif HIGH_FOREST
+  land_percent 13
+ elseif EXTRA_HIGH_FOREST
+  land_percent 14
+ elseif LOW_FOREST
+  land_percent 11
+ endif
+elseif LAND3
+ if STANDARD_FOREST
+  land_percent 12
+ elseif HIGH_FOREST
+  land_percent 13
+ elseif EXTRA_HIGH_FOREST
+  land_percent 14
+ elseif LOW_FOREST
+  land_percent 11
+ endif
+elseif LAND2
+ if STANDARD_FOREST
+  land_percent 13
+ elseif HIGH_FOREST
+  land_percent 14
+ elseif EXTRA_HIGH_FOREST
+  land_percent 15
+ elseif LOW_FOREST
+  land_percent 12
+ endif
+elseif LAND1
+ if STANDARD_FOREST
+  land_percent 13
+ elseif HIGH_FOREST
+  land_percent 14
+ elseif EXTRA_HIGH_FOREST
+  land_percent 15
+ elseif LOW_FOREST
+  land_percent 12
+ endif
+endif
+if LOW_FOREST_CLUMPS
+ number_of_clumps 11
+elseif NORMAL_FOREST_CLUMPS
+ number_of_clumps 14
+elseif HIGH_FOREST_CLUMPS
+ number_of_clumps 17
+endif
+set_avoid_player_start_areas     
+set_scale_by_groups
+}
+
+if DESERT_TILE
+create_terrain PALM_DESERT
+{     
+ base_terrain DESERT
+ spacing_to_other_terrain_types 5
+ if LAND1
+  if STANDARD_FOREST
+   land_percent 4
+  elseif HIGH_FOREST
+   land_percent 5
+  elseif EXTRA_HIGH_FOREST
+   land_percent 6
+  elseif LOW_FOREST
+   land_percent 3
+  endif
+ elseif LAND2
+  if STANDARD_FOREST
+   land_percent 4
+  elseif HIGH_FOREST
+   land_percent 4
+  elseif EXTRA_HIGH_FOREST
+   land_percent 5
+  elseif LOW_FOREST
+   land_percent 3
+  endif
+ elseif LAND3
+  if STANDARD_FOREST
+   land_percent 3
+  elseif HIGH_FOREST
+   land_percent 3
+  elseif EXTRA_HIGH_FOREST
+   land_percent 4
+  elseif LOW_FOREST
+   land_percent 3
+  endif
+ elseif LAND4
+  if STANDARD_FOREST
+   land_percent 3
+  elseif HIGH_FOREST
+   land_percent 3
+  elseif EXTRA_HIGH_FOREST
+   land_percent 4
+  elseif LOW_FOREST
+   land_percent 3
+  endif
+ elseif LAND5
+  if STANDARD_FOREST
+   land_percent 3
+  elseif HIGH_FOREST
+   land_percent 3
+  elseif EXTRA_HIGH_FOREST
+   land_percent 3
+  elseif LOW_FOREST
+   land_percent 2
+  endif
+ elseif LAND6
+  if STANDARD_FOREST
+   land_percent 3
+  elseif HIGH_FOREST
+   land_percent 3
+  elseif EXTRA_HIGH_FOREST
+   land_percent 3
+  elseif LOW_FOREST
+   land_percent 2
+  endif
+ elseif LAND7
+  if STANDARD_FOREST
+   land_percent 2
+  elseif HIGH_FOREST
+   land_percent 3
+  elseif EXTRA_HIGH_FOREST
+   land_percent 3
+  elseif LOW_FOREST
+   land_percent 2
+  endif
+ elseif LAND8
+  if STANDARD_FOREST
+   land_percent 2
+  elseif HIGH_FOREST
+   land_percent 3
+  elseif EXTRA_HIGH_FOREST
+   land_percent 3
+  elseif LOW_FOREST
+   land_percent 2
+  endif
+ elseif LAND9
+  if STANDARD_FOREST
+   land_percent 2
+  elseif HIGH_FOREST
+   land_percent 2
+  elseif EXTRA_HIGH_FOREST
+   land_percent 3
+  elseif LOW_FOREST
+   land_percent 1
+  endif
+ elseif LAND10
+  if STANDARD_FOREST
+   land_percent 2
+  elseif HIGH_FOREST
+   land_percent 2
+  elseif EXTRA_HIGH_FOREST
+   land_percent 3
+  elseif LOW_FOREST
+   land_percent 1
+  endif
+ endif
+ if LOW_FOREST_CLUMPS
+  number_of_clumps 5
+ elseif NORMAL_FOREST_CLUMPS
+  number_of_clumps 6
+ elseif HIGH_FOREST_CLUMPS
+  number_of_clumps 7
+ endif
+ set_avoid_player_start_areas
+ set_scale_by_groups
+}
+endif
+
+if GRASS_TILE
+   create_terrain DIRT
+elseif TROPICAL_TILE
+   create_terrain DIRT
+elseif SNOW_TILE
+   create_terrain GRASS_SNOW
+elseif DESERT_TILE
+   create_terrain DIRT3
+endif
+{
+  if GRASS_TILE
+     base_terrain                GRASS
+  elseif TROPICAL_TILE
+     base_terrain                GRASS3
+  elseif SNOW_TILE
+     base_terrain                SNOW
+  elseif DESERT_TILE
+     base_terrain                DESERT
+  endif
+spacing_to_other_terrain_types 5
+if STANDARD_PATCH
+ land_percent 8
+elseif HIGH_PATCH
+ land_percent 10
+elseif EXTRA_HIGH_PATCH
+ land_percent 13
+elseif LOW_PATCH
+ land_percent 6
+elseif EXTRA_LOW_PATCH
+ land_percent 4
+endif
+if LOW_PATCH_CLUMPS
+ number_of_clumps 7
+elseif NORMAL_PATCH_CLUMPS
+ number_of_clumps 10
+elseif HIGH_PATCH_CLUMPS
+ number_of_clumps 13
+endif
+set_avoid_player_start_areas
+set_scale_by_groups
+}
+
+/* SECONDARY FOREST */
+
+if GRASS_TILE
+   create_terrain FOREST
+elseif TROPICAL_TILE
+   create_terrain JUNGLE
+elseif SNOW_TILE
+   create_terrain SNOW_FOREST
+elseif DESERT_TILE
+   create_terrain PALM_DESERT
+endif
+{
+  if GRASS_TILE
+     base_terrain                GRASS
+  elseif TROPICAL_TILE
+     base_terrain                GRASS3
+  elseif SNOW_TILE
+     base_terrain                SNOW
+  elseif DESERT_TILE
+     base_terrain                DIRT
+  endif
+spacing_to_other_terrain_types 3
+if STANDARD_FOREST
+ land_percent 4
+elseif HIGH_FOREST
+ land_percent 5
+elseif EXTRA_HIGH_FOREST
+ land_percent 6
+elseif LOW_FOREST
+ land_percent 3
+endif
+if LOW_FOREST_CLUMPS
+ number_of_clumps 3
+elseif NORMAL_FOREST_CLUMPS
+ number_of_clumps 5
+elseif HIGH_FOREST_CLUMPS
+ number_of_clumps 7
+endif  
+set_avoid_player_start_areas
+set_scale_by_groups
+}
+
+/* SECONDARY PATCH */
+
+if GRASS_TILE
+   create_terrain GRASS3
+elseif TROPICAL_TILE
+   create_terrain SHALLOW
+elseif SNOW_TILE
+   create_terrain ICE
+elseif DESERT_TILE
+   create_terrain DIRT
+endif
+{
+  if GRASS_TILE
+     base_terrain                GRASS
+  elseif TROPICAL_TILE
+     base_terrain                GRASS3
+  elseif SNOW_TILE
+     base_terrain                GRASS_SNOW
+  elseif DESERT_TILE
+     base_terrain                DESERT
+  endif
+if STANDARD_PATCH
+ land_percent 3
+elseif HIGH_PATCH
+ land_percent 4
+elseif EXTRA_HIGH_PATCH
+ land_percent 5
+elseif LOW_PATCH
+ land_percent 2
+elseif EXTRA_LOW_PATCH
+ land_percent 1
+endif
+if LOW_PATCH_CLUMPS
+ number_of_clumps 3
+elseif NORMAL_FOREST_CLUMPS
+ number_of_clumps 5
+elseif HIGH_PATCH_CLUMPS
+ number_of_clumps 7
+endif
+set_avoid_player_start_areas
+spacing_to_other_terrain_types 3
+set_scale_by_size
+
+
+  if TROPICAL_TILE
+     height_limits 0 0
+     set_flat_terrain_only
+  endif
+
+}
+
+
+/* ******************************************************************* */
+/* Player setup                                                        */
+/* ******************************************************************* */
+
+<OBJECTS_GENERATION>
+
+if KF_MIL_B
+ start_random
+  percent_chance 20 #define KF_RANGE
+  percent_chance 20 #define KF_RAX
+  percent_chance 20 #define KF_MONASTERY
+  percent_chance 20 #define KF_SIEGE
+  percent_chance 20 #define KF_STABLE
+ end_random
+ if KF_RANGE
+  create_object ARCHERY_RANGE 
+  { 
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_RAX
+  create_object BARRACKS
+  { 
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_MONASTERY 
+  create_object MONASTERY
+  { 
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_SIEGE
+  create_object SIEGE_WORKSHOP
+  { 
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_STABLE 
+  create_object STABLE
+  { 
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ endif
+elseif CRAZYUNITDEF
+ create_object KFCRAZYUNIT
+ { 
+ if KF_MIL_U_B
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+ elseif KF_MIL_U_M
+  number_of_objects 1
+ elseif KF_MIL_U_G
+  number_of_objects 1
+ elseif KF_ECONFOOD
+  start_random
+   percent_chance 20 number_of_objects 3
+   percent_chance 20 number_of_objects 4
+   percent_chance 20 number_of_objects 5
+   percent_chance 20 number_of_objects 6
+   percent_chance 20 number_of_objects 7
+  end_random
+ elseif KF_ECONRES
+  start_random
+   percent_chance 20 number_of_objects 3
+   percent_chance 20 number_of_objects 4
+   percent_chance 20 number_of_objects 5
+   percent_chance 20 number_of_objects 6
+   percent_chance 20 number_of_objects 7
+  end_random
+ endif
+ set_place_for_every_player
+ min_distance_to_players 7
+ max_distance_to_players 12
+ }
+endif
+
+if KF_TC
+ if KF_EB_FARM
+  create_object FARM
+  { 
+  start_random
+   percent_chance 25 number_of_objects 1
+   percent_chance 25 number_of_objects 2
+   percent_chance 25 number_of_objects 3
+   percent_chance 25 number_of_objects 4
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_EB_HOUSE
+  create_object HOUSE
+  { 
+  start_random
+   percent_chance 25 number_of_objects 1
+   percent_chance 25 number_of_objects 2
+   percent_chance 25 number_of_objects 3
+   percent_chance 25 number_of_objects 4
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_EB_MILL
+  create_object MILL
+  { 
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_EB_MARKET
+  create_object MARKET
+  { 
+  number_of_objects 1
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 12
+  }
+ elseif KF_EB_BLACKSMITH
+  create_object BLACKSMITH
+  { 
+   number_of_objects 1
+   set_place_for_every_player
+   min_distance_to_players 7
+   max_distance_to_players 12
+  }
+ elseif KF_EB_UNIVERSITY
+  create_object UNIVERSITY
+  { 
+   number_of_objects 1
+   set_place_for_every_player
+   min_distance_to_players 7
+   max_distance_to_players 12
+  }
+ endif
+endif
+
+if KF_DEF_G
+ start_random
+  percent_chance 50 #const KFCRAZYDEFENSE 82 /* Castle */
+  percent_chance 50 #const KFCRAZYDEFENSE 236 /* Bombard Tower */
+ end_random
+ #define CRAZYDEFDEF
+elseif KF_DEF_M
+ #const KFCRAZYDEFENSE 235 /* Guard Tower */
+ #define CRAZYDEFDEF
+elseif KF_DEF_B
+ start_random
+  percent_chance 50 #const KFCRAZYDEFENSE 234 /* Guard Tower */
+  percent_chance 50 #const KFCRAZYDEFENSE 235 /* Keep */
+  end_random
+ #define CRAZYDEFDEF
+endif
+
+if CRAZYDEFDEF
+ create_object KFCRAZYDEFENSE
+ {
+ if KF_DEF_G
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 30 number_of_objects 2
+   percent_chance 20 number_of_objects 3
+   percent_chance 0 number_of_objects 4
+  end_random
+ elseif KF_DEF_M
+  start_random
+   percent_chance 34 number_of_objects 1
+   percent_chance 33 number_of_objects 2
+   percent_chance 33 number_of_objects 3
+  end_random
+ elseif KF_DEF_B
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+ endif
+ set_place_for_every_player
+ min_distance_to_players 6
+ max_distance_to_players 14
+ }
+else
+ create_object KFCRAZYDEFENSE
+ {
+ start_random
+   percent_chance 80 number_of_objects 0 /* 80 */
+   percent_chance 15 number_of_objects 1 /* 15 */
+   percent_chance  5 number_of_objects 2 /*  5 */
+ end_random
+ set_place_for_every_player
+ min_distance_to_players 6
+ max_distance_to_players 14
+ }
+endif
+
+if KF_NOMAD
+elseif KF_ONE_TC
+ create_object TOWN_CENTER
+ {
+ number_of_objects 1
+ min_distance_to_players 0
+ max_distance_to_players 0 /* 5 */
+ set_place_for_every_player
+ }
+elseif KF_TWO_TC
+ create_object TOWN_CENTER
+ {
+ number_of_objects 2
+ min_distance_to_players 0
+ max_distance_to_players 5 /* 10 */
+ set_place_for_every_player
+ group_placement_radius 5
+ }
+elseif KF_THREE_TC
+ create_object TOWN_CENTER
+ {
+ number_of_objects 3
+ min_distance_to_players 0
+ max_distance_to_players 6 /* 15 */
+ set_place_for_every_player
+ group_placement_radius 6
+ }
+endif
+
+/* ******************************************************************* */
+/* Villagers                                                           */
+/* ******************************************************************* */
+
+if REAL_NOMAD
+create_object VILLAGER
+{
+ set_place_for_every_player
+ min_distance_to_players 6
+ max_distance_to_players 100
+}
+create_object VILLAGER
+{
+ start_random
+  percent_chance 20  number_of_objects 0
+  percent_chance 20  number_of_objects 1
+  percent_chance 20  number_of_objects 2
+  percent_chance 20  number_of_objects 3
+  percent_chance 20  number_of_objects 4
+ end_random
+ set_place_for_every_player
+ min_distance_to_players 6
+ max_distance_to_players 100
+}
+elseif FAKE_NOMAD
+create_object VILLAGER
+{
+ set_place_for_every_player
+ min_distance_to_players 1 /* 0 */
+ max_distance_to_players 2 /* 4 */
+}
+create_object VILLAGER
+{
+ start_random
+  percent_chance 20  number_of_objects 0
+  percent_chance 20  number_of_objects 1
+  percent_chance 20  number_of_objects 2
+  percent_chance 20  number_of_objects 3
+  percent_chance 20  number_of_objects 4
+ end_random
+ set_place_for_every_player
+ min_distance_to_players 0 /* was 6 */
+ max_distance_to_players 6 /* was 100 */
+}
+elseif KF_TC
+create_object VILLAGER
+{
+ set_place_for_every_player
+ min_distance_to_players 6 /* 0 */
+ max_distance_to_players 6
+/* group_placement_radius 5 */
+}
+create_object VILLAGER
+{
+ start_random
+  percent_chance 90 number_of_objects 0 /* 90 */
+  percent_chance 5  number_of_objects 1 /*  5 */
+  percent_chance 4  number_of_objects 2 /*  4 */
+  percent_chance 1  number_of_objects 5 /*  1 */
+ end_random
+ set_place_for_every_player
+ min_distance_to_players 0
+ max_distance_to_players 6
+/* group_placement_radius 5 */
+}
+endif
+
+/* ******************************************************************* */
+/* Extra Gaia vills                                                    */
+/* ******************************************************************* */
+
+create_object VILLAGER
+{   
+if KF_NOMAD
+ if TINY_MAP
+  start_random
+   percent_chance 25 number_of_objects 0
+   percent_chance 25 number_of_objects 1
+   percent_chance 25 number_of_objects 2
+   percent_chance 25 number_of_objects 3
+  end_random
+ elseif SMALL_MAP
+  start_random
+   percent_chance 17 number_of_objects 0
+   percent_chance 17 number_of_objects 1
+   percent_chance 17 number_of_objects 2
+   percent_chance 17 number_of_objects 3
+   percent_chance 16 number_of_objects 4
+   percent_chance 16 number_of_objects 5
+  end_random
+ elseif MEDIUM_MAP
+  start_random
+   percent_chance 12 number_of_objects 0
+   percent_chance 12 number_of_objects 1
+   percent_chance 12 number_of_objects 2
+   percent_chance 12 number_of_objects 3
+   percent_chance 13 number_of_objects 4
+   percent_chance 13 number_of_objects 5
+   percent_chance 13 number_of_objects 6
+   percent_chance 13 number_of_objects 7
+  end_random
+ elseif LARGE_MAP
+  start_random
+   percent_chance 10 number_of_objects 0
+   percent_chance 9 number_of_objects 1
+   percent_chance 9 number_of_objects 2
+   percent_chance 9 number_of_objects 3
+   percent_chance 9 number_of_objects 4
+   percent_chance 9 number_of_objects 5
+   percent_chance 9 number_of_objects 6
+   percent_chance 9 number_of_objects 7
+   percent_chance 9 number_of_objects 8
+   percent_chance 9 number_of_objects 9
+   percent_chance 9 number_of_objects 10
+  end_random
+ elseif HUGE_MAP
+  start_random
+   percent_chance 8 number_of_objects 0
+   percent_chance 8 number_of_objects 1
+   percent_chance 7 number_of_objects 2
+   percent_chance 7 number_of_objects 3
+   percent_chance 7 number_of_objects 4
+   percent_chance 7 number_of_objects 5
+   percent_chance 7 number_of_objects 6
+   percent_chance 7 number_of_objects 7
+   percent_chance 7 number_of_objects 8
+   percent_chance 7 number_of_objects 9
+   percent_chance 7 number_of_objects 10
+   percent_chance 7 number_of_objects 11
+   percent_chance 7 number_of_objects 12
+   percent_chance 7 number_of_objects 13
+  end_random
+ elseif GIGANTIC_MAP
+  start_random
+   percent_chance 6 number_of_objects 0
+   percent_chance 6 number_of_objects 1
+   percent_chance 6 number_of_objects 2
+   percent_chance 6 number_of_objects 3
+   percent_chance 6 number_of_objects 4
+   percent_chance 6 number_of_objects 5
+   percent_chance 6 number_of_objects 6
+   percent_chance 6 number_of_objects 7
+   percent_chance 6 number_of_objects 8
+   percent_chance 6 number_of_objects 9
+   percent_chance 6 number_of_objects 10
+   percent_chance 6 number_of_objects 11
+   percent_chance 6 number_of_objects 12
+   percent_chance 6 number_of_objects 13
+   percent_chance 6 number_of_objects 14
+   percent_chance 5 number_of_objects 15
+   percent_chance 5 number_of_objects 16
+  end_random
+ endif
+else
+ if TINY_MAP
+  start_random
+   percent_chance 85 number_of_objects 0
+   percent_chance 10 number_of_objects 1
+   percent_chance  5 number_of_objects 2
+  end_random
+ elseif SMALL_MAP
+  start_random
+   percent_chance 25 number_of_objects 0
+   percent_chance 25 number_of_objects 1
+   percent_chance 25 number_of_objects 2
+   percent_chance 25 number_of_objects 3
+  end_random
+ elseif MEDIUM_MAP
+  start_random
+   percent_chance 20 number_of_objects 0
+   percent_chance 20 number_of_objects 1
+   percent_chance 20 number_of_objects 2
+   percent_chance 20 number_of_objects 3
+   percent_chance 20 number_of_objects 4
+  end_random
+ elseif LARGE_MAP
+  start_random
+   percent_chance 17 number_of_objects 0
+   percent_chance 17 number_of_objects 1
+   percent_chance 17 number_of_objects 2
+   percent_chance 17 number_of_objects 3
+   percent_chance 16 number_of_objects 4
+   percent_chance 16 number_of_objects 5
+  end_random
+ elseif HUGE_MAP
+  start_random
+   percent_chance 15 number_of_objects 0
+   percent_chance 15 number_of_objects 1
+   percent_chance 14 number_of_objects 2
+   percent_chance 14 number_of_objects 3
+   percent_chance 14 number_of_objects 4
+   percent_chance 14 number_of_objects 5
+   percent_chance 14 number_of_objects 6
+  end_random
+ elseif GIGANTIC_MAP
+  start_random
+   percent_chance 12 number_of_objects 0
+   percent_chance 12 number_of_objects 1
+   percent_chance 12 number_of_objects 2
+   percent_chance 12 number_of_objects 3
+   percent_chance 13 number_of_objects 4
+   percent_chance 13 number_of_objects 5
+   percent_chance 13 number_of_objects 6
+   percent_chance 13 number_of_objects 7
+  end_random
+ endif
+endif
+set_gaia_object_only
+set_place_for_every_player
+min_distance_to_players 10
+max_distance_to_players 14 /* 100 */
+min_distance_group_placement  10
+}
+
+if REAL_NOMAD
+ create_object OUTPOST
+ {
+ start_random
+  percent_chance 25 number_of_objects 0
+  percent_chance 25 number_of_objects 1
+  percent_chance 25 number_of_objects 2
+  percent_chance 25 number_of_objects 3
+ end_random
+ set_place_for_every_player
+ min_distance_to_players 17
+ max_distance_to_players 100
+ temp_min_distance_group_placement 10
+ }
+elseif FAKE_NOMAD
+ create_object OUTPOST
+ {
+ start_random
+  percent_chance 25 number_of_objects 0
+  percent_chance 25 number_of_objects 1
+  percent_chance 25 number_of_objects 2
+  percent_chance 25 number_of_objects 3
+ end_random
+ set_place_for_every_player
+ min_distance_to_players 10
+ max_distance_to_players 20
+ temp_min_distance_group_placement 10
+ }
+endif
+
+if REAL_NOMAD
+ start_random
+  percent_chance 11 #define KF_RN_SCOUT_NONE
+  percent_chance 22 #define KF_RN_SCOUT_SPEAR
+  percent_chance 22 #define KF_RN_SCOUT_SKRIM
+  percent_chance 22 #define KF_RN_SCOUT_SCOUT
+  percent_chance 22 #define KF_RN_SCOUT_MILITIA
+  percent_chance 1 #define KF_RN_SCOUT_VDML
+  percent_chance 0 #define KF_RN_SCOUT_PETARD /* AI can not scout */
+  percent_chance 0 #define KF_RN_SCOUT_KING /* AI can not scout */
+ end_random
+ if KF_RN_SCOUT_KING
+  create_object KING
+  {
+  number_of_objects 1
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ elseif KF_RN_SCOUT_SPEAR
+  create_object SPEARMAN
+  {
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ elseif KF_RN_SCOUT_SKRIM
+  create_object SKIRMISHER
+  {
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ elseif KF_RN_SCOUT_PETARD
+  create_object PETARD
+  {
+  number_of_objects 1
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ elseif KF_RN_SCOUT_MILITIA
+  create_object MILITIA
+  {
+  start_random
+   percent_chance 50 number_of_objects 1
+   percent_chance 50 number_of_objects 2
+  end_random
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ elseif KF_RN_SCOUT_SCOUT
+  create_object SCOUT
+  {
+  number_of_objects 1
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ elseif KF_RN_SCOUT_VDML
+  #const KF_VMDL 206
+  create_object KF_VMDL
+  {
+  number_of_objects 1
+  set_place_for_every_player
+  min_distance_to_players 6
+  max_distance_to_players 100
+  }
+ endif
+elseif CRAZYUNITDEF
+else
+ start_random
+  percent_chance 70 #define KF_SCOUT
+  percent_chance 29 #define NO_SCOUT
+  percent_chance  1 #define VDML_SCOUT
+  percent_chance  0 #define KING_SCOUT
+ end_random
+ if NO_SCOUT
+ elseif KF_SCOUT
+  create_object SCOUT
+  {
+  if KF_MIL_U_B
+   number_of_objects 0
+  elseif KF_MIL_U_G
+   number_of_objects 0
+  elseif KF_MIL_U_M
+   number_of_objects 0
+  else
+   start_random
+    percent_chance 80 number_of_objects 1
+    percent_chance 15 number_of_objects 2
+    percent_chance 5 number_of_objects 3
+   end_random
+  endif
+  set_place_for_every_player
+  min_distance_to_players 7
+  max_distance_to_players 9
+  }
+ elseif VDML_SCOUT
+  #const KF_VMDL 206
+  create_object KF_VMDL
+  {
+  if KF_MIL_U
+   number_of_objects 0
+  else
+   number_of_objects 1
+  endif
+  set_place_for_every_player
+  min_distance_to_players    7
+  max_distance_to_players    9
+  }
+ elseif KING_SCOUT
+  create_object KING
+  {
+  number_of_objects 1
+  set_place_for_every_player
+  min_distance_to_players    7
+  max_distance_to_players    9
+  }
+ endif
+endif
+
+/* WOLVES */
+if KF_RN_SCOUT_SPEAR
+ #define KF_WOLVES
+elseif KF_RN_SCOUT_SKRIM
+ #define KF_WOLVES
+elseif KF_RN_SCOUT_SCOUT
+ #define KF_WOLVES
+elseif KF_RN_SCOUT_MILITIA
+ #define KF_WOLVES
+elseif KF_SCOUT
+ #define KF_WOLVES
+endif
+
+
+/* WALL */
+start_random
+ percent_chance 33 #define KF_P_WALL
+ percent_chance 34 #define KF_S_WALL
+ percent_chance 33 #define KF_F_WALL
+end_random
+
+if KF_MIL_U_G
+ #define KF_ALLRDY_WALL
+ create_object FORTIFIED_WALL
+ {
+ set_place_for_every_player
+ number_of_objects 1
+ if TINY_MAP
+  min_distance_to_players 13
+  max_distance_to_players 16
+ elseif SMALL_MAP
+  min_distance_to_players 14
+  max_distance_to_players 18
+ elseif MEDIUM_MAP
+  min_distance_to_players 16
+  max_distance_to_players 19
+ elseif LARGE_MAP
+  min_distance_to_players 16
+  max_distance_to_players 19
+ elseif HUGE_MAP
+  min_distance_to_players 16
+  max_distance_to_players 19
+ elseif GIGANTIC_MAP
+  min_distance_to_players 16
+  max_distance_to_players 20
+ endif
+ }
+elseif KF_MIL_U_M
+ #define KF_ALLRDY_WALL
+ create_object PALISADE_WALL
+ {
+ set_place_for_every_player
+ number_of_objects 1
+ if TINY_MAP
+  min_distance_to_players 13
+  max_distance_to_players 16
+ elseif SMALL_MAP
+  min_distance_to_players 14
+  max_distance_to_players 18
+ elseif MEDIUM_MAP
+  min_distance_to_players 16
+  max_distance_to_players 20
+ elseif LARGE_MAP
+  min_distance_to_players 16
+  max_distance_to_players 20
+ elseif HUGE_MAP
+  min_distance_to_players 16
+  max_distance_to_players 20
+ elseif GIGANTIC_MAP
+  min_distance_to_players 16
+  max_distance_to_players 20
+ endif
+ }
+endif
+
+if KF_ALLRDY_WALL
+else
+ if KF_ONE_TC
+  start_random
+   percent_chance 80 #define KF_TC_NO_WALL
+   percent_chance  4 #define KF_TC_P_WALL
+   percent_chance  3 #define KF_TC_S_WALL
+   percent_chance  3 #define KF_TC_F_WALL
+  end_random
+  if KF_TC_NO_WALL
+  elseif KF_TC_P_WALL
+   create_object PALISADE_WALL
+  elseif KF_TC_W_WALL
+   create_object WALL
+  elseif KF__TC_F_WALL
+   create_object FORTIFIED_WALL
+  endif
+  {
+  set_place_for_every_player
+  number_of_objects 1
+  if TINY_MAP
+   min_distance_to_players 13
+   max_distance_to_players 16
+  elseif SMALL_MAP
+   min_distance_to_players 14
+   max_distance_to_players 18
+  elseif MEDIUM_MAP
+   min_distance_to_players 16
+   max_distance_to_players 20
+  elseif LARGE_MAP
+   min_distance_to_players 16
+   max_distance_to_players 20
+  elseif HUGE_MAP
+   min_distance_to_players 16
+   max_distance_to_players 20
+  elseif GIGANTIC_MAP
+   min_distance_to_players 16
+   max_distance_to_players 20
+  endif
+  }
+ endif
+endif
+
+create_object RELIC
+{
+if NO_RELIC
+ number_of_objects 0
+elseif EXTRA_LOW_RELIC
+ number_of_objects 2
+elseif LOW_RELIC
+ number_of_objects 5
+elseif STANDARD_RELIC
+ number_of_objects 7
+elseif HIGH_RELIC
+ number_of_objects 9
+elseif EXTRA_HIGH_RELIC
+ number_of_objects 12
+ set_scaling_to_map_size
+endif  
+min_distance_to_players 25
+temp_min_distance_group_placement 20
+}
+
+if NO_SHEEP_GROUPS
+else
+   if TROPICAL_TILE
+      create_object TURKEY
+   else
+      create_object SHEEP
+   endif
+{
+ number_of_groups 1
+ if STANDARD_SHEEP
+    number_of_objects 4
+    group_placement_radius 4
+ elseif HIGH_SHEEP
+    number_of_objects 5
+    group_placement_radius 5
+ elseif EXTRA_HIGH_SHEEP
+    number_of_objects 8 /* 7 */
+    group_placement_radius 8 /* 7 */
+ elseif LOW_SHEEP
+    number_of_objects 3
+    group_placement_radius 3
+ elseif EXTRA_LOW_SHEEP
+    number_of_objects 1
+    group_placement_radius 2
+ endif
+ set_loose_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 10
+  max_distance_to_players 100
+ else
+  min_distance_to_players 10
+  max_distance_to_players 14
+ endif
+ min_distance_group_placement 5
+ if     KF_RD_SHEEP_X     resource_delta 32667
+ elseif KF_RD_SHEEP_H     resource_delta 1000
+ elseif KF_RD_SHEEP_M     resource_delta 200
+ elseif KF_RD_SHEEP_L     resource_delta 150
+ elseif KF_RD_SHEEP_NO    resource_delta 0
+ elseif KF_RD_SHEEP_NEG_L resource_delta -50
+ elseif KF_RD_SHEEP_NEG_M resource_delta -75
+ elseif KF_RD_SHEEP_NEG_H resource_delta -90
+ elseif KF_RD_SHEEP_NEG_X resource_delta -99
+ endif
+}
+   if TROPICAL_TILE
+      create_object TURKEY
+   else
+      create_object SHEEP
+   endif
+{
+ if STANDARD_SHEEP_GROUPS
+  number_of_groups 2
+ elseif HIGH_SHEEP_GROUPS
+  number_of_groups 3
+ elseif EXTRA_HIGH_SHEEP_GROUPS
+  number_of_groups 3
+ elseif LOW_SHEEP_GROUPS
+  number_of_groups 1
+ elseif EXTRA_LOW_SHEEP_GROUPS
+  number_of_groups 1
+ endif
+ if STANDARD_SHEEP
+  number_of_objects 2
+ elseif HIGH_SHEEP
+  number_of_objects 3
+ elseif EXTRA_HIGH_SHEEP
+  number_of_objects 4
+ elseif LOW_SHEEP
+  number_of_objects 2
+ elseif EXTRA_LOW_SHEEP
+  number_of_objects 1
+ endif
+ group_placement_radius 3
+ set_loose_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 16
+  max_distance_to_players 100
+ else
+  min_distance_to_players 16
+  max_distance_to_players 20
+ endif
+ min_distance_group_placement 5
+ if     KF_RD_SHEEP_X     resource_delta 32667
+ elseif KF_RD_SHEEP_H     resource_delta 1000
+ elseif KF_RD_SHEEP_M     resource_delta 200
+ elseif KF_RD_SHEEP_L     resource_delta 150
+ elseif KF_RD_SHEEP_NO    resource_delta 0 
+ elseif KF_RD_SHEEP_NEG_L resource_delta -50
+ elseif KF_RD_SHEEP_NEG_M resource_delta -75
+ elseif KF_RD_SHEEP_NEG_H resource_delta -90
+ elseif KF_RD_SHEEP_NEG_X resource_delta -99
+ endif
+}
+endif
+
+if NO_FORAGE_GROUPS
+else
+create_object FORAGE
+{
+ if EXTRA_LOW_FORAGE
+  number_of_objects 3
+  group_placement_radius 2
+ elseif LOW_FORAGE
+  number_of_objects 4
+  group_placement_radius 2
+ elseif STANDARD_FORAGE
+  number_of_objects 6
+  group_placement_radius 3
+ elseif HIGH_FORAGE
+  number_of_objects 7
+  group_placement_radius 4
+ elseif EXTRA_HIGH_FORAGE
+   number_of_objects 9
+   group_placement_radius 5
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 9
+  max_distance_to_players 100
+ else
+  min_distance_to_players 9
+  max_distance_to_players 12
+ endif
+ min_distance_group_placement 7
+ max_distance_to_other_zones  7
+ if     KF_RD_FORAGE_X     resource_delta 32642
+ elseif KF_RD_FORAGE_H     resource_delta 1000
+ elseif KF_RD_FORAGE_M     resource_delta 250
+ elseif KF_RD_FORAGE_L     resource_delta 175
+ elseif KF_RD_FORAGE_NO    resource_delta 0
+ elseif KF_RD_FORAGE_NEG_L resource_delta -50
+ elseif KF_RD_FORAGE_NEG_M resource_delta -75
+ elseif KF_RD_FORAGE_NEG_H resource_delta -105
+ elseif KF_RD_FORAGE_NEG_X resource_delta -124
+ endif
+}
+endif
+
+if NO_PLAYER_GOLD
+else
+create_object GOLD
+{
+ if LOW_PLAYER_GOLD
+  number_of_objects 4
+  group_placement_radius 2
+ elseif STANDARD_PLAYER_GOLD
+  number_of_objects 6
+  group_placement_radius 3
+ elseif HIGH_PLAYER_GOLD
+  number_of_objects 8
+  group_placement_radius 4
+ elseif EXTRA_HIGH_PLAYER_GOLD
+  number_of_objects 10
+  group_placement_radius 5
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ number_of_groups 1
+ if REAL_NOMAD
+  min_distance_to_players 10
+  max_distance_to_players 100
+ else
+  min_distance_to_players 10
+  max_distance_to_players 14
+ endif
+ min_distance_group_placement 7
+ max_distance_to_other_zones 7
+ if     KF_RD_GOLD_X     resource_delta 31967
+ elseif KF_RD_GOLD_H     resource_delta 5000
+ elseif KF_RD_GOLD_M     resource_delta 2500
+ elseif KF_RD_GOLD_L     resource_delta 1000
+ elseif KF_RD_GOLD_NO    resource_delta 0
+ elseif KF_RD_GOLD_NEG_L resource_delta -200
+ elseif KF_RD_GOLD_NEG_M resource_delta -400
+ elseif KF_RD_GOLD_NEG_H resource_delta -700
+ elseif KF_RD_GOLD_NEG_X resource_delta -799
+ endif
+}
+endif
+
+if NO_PLAYER_GOLD
+else
+create_object GOLD
+{
+ if LOW_PLAYER_GOLD
+  number_of_objects 3
+  group_placement_radius 2
+ elseif STANDARD_PLAYER_GOLD
+  number_of_objects 4
+  group_placement_radius 2
+ elseif HIGH_PLAYER_GOLD
+  number_of_objects 5
+  group_placement_radius 3
+ elseif EXTRA_HIGH_PLAYER_GOLD
+  number_of_objects 6
+  group_placement_radius 3
+ endif
+ number_of_groups 1
+ set_tight_grouping   
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 5
+  max_distance_to_players 100
+ else
+  min_distance_to_players 15
+  max_distance_to_players 20
+ endif
+ min_distance_group_placement 7
+ max_distance_to_other_zones 7
+ if     KF_RD_GOLD_X     resource_delta 31967
+ elseif KF_RD_GOLD_H     resource_delta 5000
+ elseif KF_RD_GOLD_M     resource_delta 2500
+ elseif KF_RD_GOLD_L     resource_delta 1000
+ elseif KF_RD_GOLD_NO    resource_delta 0
+ elseif KF_RD_GOLD_NEG_L resource_delta -200
+ elseif KF_RD_GOLD_NEG_M resource_delta -400
+ elseif KF_RD_GOLD_NEG_H resource_delta -700
+ elseif KF_RD_GOLD_NEG_X resource_delta -799
+ endif
+}
+endif
+
+if NO_PLAYER_STONE
+else
+create_object STONE
+{
+ if EXTRA_LOW_PLAYER_STONE
+  number_of_objects 2
+  group_placement_radius 1
+ elseif LOW_PLAYER_STONE
+  number_of_objects 3
+  group_placement_radius 2
+ elseif STANDARD_PLAYER_STONE
+  number_of_objects 4
+  group_placement_radius 2
+ elseif HIGH_PLAYER_STONE
+  number_of_objects 5
+  group_placement_radius 3
+ elseif EXTRA_HIGH_PLAYER_STONE
+  number_of_objects 6
+  group_placement_radius 3
+ endif
+ number_of_groups 1
+ set_tight_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 10
+  max_distance_to_players 100
+ else
+  min_distance_to_players 10
+  max_distance_to_players 20
+ endif
+ min_distance_group_placement 7
+ max_distance_to_other_zones 7
+ if     KF_RD_STONE_X     resource_delta 32417
+ elseif KF_RD_STONE_H     resource_delta 1000
+ elseif KF_RD_STONE_M     resource_delta 600
+ elseif KF_RD_STONE_L     resource_delta 450
+ elseif KF_RD_STONE_NO    resource_delta 0
+ elseif KF_RD_STONE_NEG_L resource_delta -100
+ elseif KF_RD_STONE_NEG_M resource_delta -200
+ elseif KF_RD_STONE_NEG_H resource_delta -300
+ elseif KF_RD_STONE_NEG_X resource_delta -349
+ endif
+}
+endif
+
+if NO_PLAYER_GOLD
+else
+create_object GOLD
+{
+ if LOW_PLAYER_GOLD
+  number_of_objects 3
+  group_placement_radius 2
+ elseif STANDARD_PLAYER_GOLD
+  number_of_objects 4
+  group_placement_radius 2
+ elseif HIGH_PLAYER_GOLD
+  number_of_objects 5
+  group_placement_radius 3
+ elseif EXTRA_HIGH_PLAYER_GOLD
+  number_of_objects 6
+  group_placement_radius 3
+ endif
+ number_of_groups 1   
+ set_tight_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 20
+  max_distance_to_players 100
+ else
+  min_distance_to_players 20
+  max_distance_to_players 30
+ endif
+ min_distance_group_placement 7
+ max_distance_to_other_zones 7
+ if     KF_RD_FGOLD_X     resource_delta 31967
+ elseif KF_RD_FGOLD_H     resource_delta 5000
+ elseif KF_RD_FGOLD_M     resource_delta 2500
+ elseif KF_RD_FGOLD_L     resource_delta 1000
+ elseif KF_RD_FGOLD_NO    resource_delta 0
+ elseif KF_RD_FGOLD_NEG_L resource_delta -200
+ elseif KF_RD_FGOLD_NEG_M resource_delta -400
+ elseif KF_RD_FGOLD_NEG_H resource_delta -700
+ elseif KF_RD_FGOLD_NEG_X resource_delta -799
+ endif
+}
+endif
+
+if NO_PLAYER_STONE
+else
+create_object STONE
+{
+ if EXTRA_LOW_PLAYER_STONE
+  number_of_objects 2
+  group_placement_radius 1
+ elseif LOW_PLAYER_STONE
+  number_of_objects 3
+  group_placement_radius 2
+ elseif STANDARD_PLAYER_STONE
+  number_of_objects 4
+  group_placement_radius 2
+ elseif HIGH_PLAYER_STONE
+  number_of_objects 5
+  group_placement_radius 3
+ elseif EXTRA_HIGH_PLAYER_STONE
+  number_of_objects 6
+  group_placement_radius 3
+ endif
+ number_of_groups 1
+ set_tight_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 20
+  max_distance_to_players 100
+ else
+  min_distance_to_players 20
+  max_distance_to_players 27
+ endif
+ min_distance_group_placement 7
+ max_distance_to_other_zones 7
+ if     KF_RD_MSTONE_X     resource_delta 32417
+ elseif KF_RD_MSTONE_H     resource_delta 1000
+ elseif KF_RD_MSTONE_M     resource_delta 600
+ elseif KF_RD_MSTONE_L     resource_delta 450
+ elseif KF_RD_MSTONE_NO    resource_delta 0
+ elseif KF_RD_MSTONE_NEG_L resource_delta -100
+ elseif KF_RD_MSTONE_NEG_M resource_delta -200
+ elseif KF_RD_MSTONE_NEG_H resource_delta -300
+ elseif KF_RD_MSTONE_NEG_X resource_delta -349
+ endif
+}
+endif
+
+if NO_DEER_GROUPS
+else
+create_object DEER
+{
+ if STANDARD_DEER
+  number_of_objects 4
+  group_variance 1
+  group_placement_radius 3
+ elseif HIGH_DEER
+  number_of_objects 6
+  group_variance 1
+  group_placement_radius 3
+ elseif EXTRA_HIGH_DEER
+  number_of_objects 8 /* 7 */
+  group_variance 2
+  group_placement_radius 3
+ elseif LOW_DEER
+  number_of_objects 3
+  group_variance 1
+  group_placement_radius 3
+ elseif EXTRA_LOW_DEER
+  number_of_objects 1 /* 2 */
+  group_variance 0
+  group_placement_radius 3
+ endif
+ if STANDARD_DEER_GROUPS
+  number_of_groups 1
+ elseif HIGH_DEER_GROUPS
+  number_of_groups 1
+ elseif EXTRA_HIGH_DEER_GROUPS
+  number_of_groups 1
+ elseif LOW_DEER_GROUPS
+  number_of_groups 1
+ elseif EXTRA_LOW_DEER_GROUPS
+  number_of_groups 1
+ endif
+ set_loose_grouping
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 14
+  max_distance_to_players 100
+ else
+  min_distance_to_players 14
+  max_distance_to_players 30
+ endif
+ if     KF_RD_DEER_X     resource_delta 32627
+ elseif KF_RD_DEER_H     resource_delta 1000
+ elseif KF_RD_DEER_M     resource_delta 300
+ elseif KF_RD_DEER_L     resource_delta 200
+ elseif KF_RD_DEER_NO    resource_delta 0
+ elseif KF_RD_DEER_NEG_L resource_delta -50
+ elseif KF_RD_DEER_NEG_M resource_delta -70
+ elseif KF_RD_DEER_NEG_H resource_delta -110
+ elseif KF_RD_DEER_NEG_X resource_delta -139
+ endif
+}
+endif
+
+if NO_BOAR_GROUPS
+else
+if TROPICAL_TILE
+   create_object JAVELINA
+else
+   create_object BOAR
+endif
+{
+ if STANDARD_BOAR
+  number_of_objects 1
+  number_of_groups 2
+  group_placement_radius 3
+ elseif HIGH_BOAR
+  number_of_objects 1
+  number_of_groups 3
+  group_placement_radius 3
+ elseif EXTRA_HIGH_BOAR
+  number_of_objects 2
+  start_random
+   percent_chance 70 number_of_groups 2
+   percent_chance 25 number_of_groups 3
+   percent_chance 10 number_of_groups 4
+   percent_chance  5 number_of_groups 5
+  end_random
+  group_placement_radius 3
+ elseif LOW_BOAR
+  number_of_objects 1
+  group_placement_radius 3
+ elseif EXTRA_LOW_BOAR
+  number_of_objects 1
+  group_placement_radius 3
+ endif
+ set_gaia_object_only
+ set_place_for_every_player
+ if REAL_NOMAD
+  min_distance_to_players 16
+  max_distance_to_players 100
+ else
+  min_distance_to_players 16
+  max_distance_to_players 22
+ endif
+ if     KF_RD_BOAR_X     resource_delta 32427
+ elseif KF_RD_BOAR_H     resource_delta 1000
+ elseif KF_RD_BOAR_M     resource_delta 500
+ elseif KF_RD_BOAR_L     resource_delta 400
+ elseif KF_RD_BOAR_NO    resource_delta 0
+ elseif KF_RD_BOAR_NEG_L resource_delta -100
+ elseif KF_RD_BOAR_NEG_M resource_delta -250
+ elseif KF_RD_BOAR_NEG_H resource_delta -295
+ elseif KF_RD_BOAR_NEG_X resource_delta -339
+ endif
+}
+endif
+
+if KF_NOMAD
+elseif KF_WOLVES
+  if TROPICAL_TILE
+   create_object JAGUAR
+  else
+   create_object WOLF
+  endif
+  {
+  if     STANDARD_WOLVES   number_of_objects 3 /* 2 */
+  elseif HIGH_WOLVES       number_of_objects 4 /* 3 */
+  elseif EXTRA_HIGH_WOLVES number_of_objects 5 /* 4 */
+  elseif LOW_WOLVES        number_of_objects 2 /* 1 */
+  elseif EXTRA_LOW_WOLVES  number_of_objects 1
+  endif
+  set_gaia_object_only
+  set_place_for_every_player
+  min_distance_group_placement 12
+  min_distance_to_players      24
+  max_distance_to_players      40
+  }
+endif
+
+if NO_FORAGE_GROUPS
+else
+ if LARGE_MAP
+create_object FORAGE
+{
+  if EXTRA_LOW_RANDOM_FORAGE
+   number_of_groups 1
+   number_of_objects 3
+   group_placement_radius 3
+  elseif LOW_RANDOM_FORAGE
+   number_of_groups 1
+   number_of_objects 4
+   group_placement_radius 3
+  elseif STANDARD_RANDOM_FORAGE
+   number_of_groups 1
+   number_of_objects 5
+   group_placement_radius 3
+  elseif HIGH_RANDOM_FORAGE
+   number_of_groups 2
+   number_of_objects 4
+   group_placement_radius 3
+  elseif EXTRA_HIGH_RANDOM_FORAGE
+   number_of_groups 3
+   number_of_objects 4
+   group_placement_radius 3
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  max_distance_to_players 120
+  min_distance_group_placement 7
+  if     KF_RD_FORAGE_X     resource_delta 32642
+  elseif KF_RD_FORAGE_H     resource_delta 1000
+  elseif KF_RD_FORAGE_M     resource_delta 250
+  elseif KF_RD_FORAGE_L     resource_delta 175
+  elseif KF_RD_FORAGE_NO    resource_delta 0
+  elseif KF_RD_FORAGE_NEG_L resource_delta -50
+  elseif KF_RD_FORAGE_NEG_M resource_delta -75
+  elseif KF_RD_FORAGE_NEG_H resource_delta -105
+  elseif KF_RD_FORAGE_NEG_X resource_delta -124
+  endif
+}
+ endif
+ if HUGE_MAP
+create_object FORAGE
+{
+  if EXTRA_LOW_RANDOM_FORAGE
+   number_of_groups 1
+   number_of_objects 5
+   group_placement_radius 3
+  elseif LOW_RANDOM_FORAGE
+   number_of_groups 2
+   number_of_objects 4
+   group_placement_radius 3
+  elseif STANDARD_RANDOM_FORAGE
+   number_of_groups 2
+   number_of_objects 5
+   group_placement_radius 3
+  elseif HIGH_RANDOM_FORAGE
+   number_of_groups 2
+   number_of_objects 6
+   group_placement_radius 3
+  elseif EXTRA_HIGH_RANDOM_FORAGE
+   number_of_groups 3
+   number_of_objects 4
+   group_placement_radius 3
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  max_distance_to_players 120
+  min_distance_group_placement 7
+  if     KF_RD_FORAGE_X     resource_delta 32642
+  elseif KF_RD_FORAGE_H     resource_delta 1000
+  elseif KF_RD_FORAGE_M     resource_delta 250
+  elseif KF_RD_FORAGE_L     resource_delta 175
+  elseif KF_RD_FORAGE_NO    resource_delta 0
+  elseif KF_RD_FORAGE_NEG_L resource_delta -50
+  elseif KF_RD_FORAGE_NEG_M resource_delta -75
+  elseif KF_RD_FORAGE_NEG_H resource_delta -105
+  elseif KF_RD_FORAGE_NEG_X resource_delta -124
+  endif
+}
+ endif
+ if GIGANTIC_MAP
+create_object FORAGE
+{
+  if EXTRA_LOW_RANDOM_FORAGE
+   number_of_groups 2
+   number_of_objects 5
+   group_placement_radius 3
+  elseif LOW_RANDOM_FORAGE
+   number_of_groups 3
+   number_of_objects 4
+   group_placement_radius 3
+  elseif STANDARD_RANDOM_FORAGE
+   number_of_groups 3
+   number_of_objects 5
+   group_placement_radius 3
+  elseif HIGH_RANDOM_FORAGE
+   number_of_groups 3
+   number_of_objects 6
+   group_placement_radius 3
+  elseif EXTRA_HIGH_RANDOM_FORAGE
+   number_of_groups 4
+   number_of_objects 4
+   group_placement_radius 3
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  max_distance_to_players 120
+  min_distance_group_placement 7
+  if     KF_RD_FORAGE_X     resource_delta 32642
+  elseif KF_RD_FORAGE_H     resource_delta 1000
+  elseif KF_RD_FORAGE_M     resource_delta 250
+  elseif KF_RD_FORAGE_L     resource_delta 175
+  elseif KF_RD_FORAGE_NO    resource_delta 0
+  elseif KF_RD_FORAGE_NEG_L resource_delta -50
+  elseif KF_RD_FORAGE_NEG_M resource_delta -75
+  elseif KF_RD_FORAGE_NEG_H resource_delta -105
+  elseif KF_RD_FORAGE_NEG_X resource_delta -124
+  endif
+}
+ endif
+endif
+
+if LARGE_MAP
+create_object DEER
+{
+ if STANDARD_DEER
+  number_of_groups 1
+  number_of_objects 5
+  group_placement_radius 3
+ elseif HIGH_DEER
+  number_of_groups 2
+  number_of_objects 4
+  group_placement_radius 3
+ elseif EXTRA_HIGH_DEER
+  number_of_groups 3
+  number_of_objects 4
+  group_placement_radius 3
+ elseif LOW_DEER
+  number_of_groups 1
+  number_of_objects 4
+  group_placement_radius 3
+ elseif EXTRA_LOW_DEER
+  number_of_groups 1
+  number_of_objects 3
+  group_placement_radius 3
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ min_distance_to_players 40
+ max_distance_to_players 120
+ min_distance_group_placement 10
+ if     KF_RD_XDEER_X     resource_delta 32627
+ elseif KF_RD_XDEER_H     resource_delta 1000
+ elseif KF_RD_XDEER_M     resource_delta 300
+ elseif KF_RD_XDEER_L     resource_delta 200
+ elseif KF_RD_XDEER_NO    resource_delta 0
+ elseif KF_RD_XDEER_NEG_L resource_delta -50
+ elseif KF_RD_XDEER_NEG_M resource_delta -70
+ elseif KF_RD_XDEER_NEG_H resource_delta -110
+ elseif KF_RD_XDEER_NEG_X resource_delta -139
+ endif
+}
+endif
+
+if HUGE_MAP
+create_object DEER
+{
+ if STANDARD_DEER
+  number_of_groups 2
+  number_of_objects 5
+  group_placement_radius 3
+ elseif HIGH_DEER
+  number_of_groups 2
+  number_of_objects 6
+  group_placement_radius 3
+ elseif EXTRA_HIGH_DEER
+  number_of_groups 3
+  number_of_objects 5
+  group_placement_radius 3
+ elseif LOW_DEER
+  number_of_groups 2
+  number_of_objects 4
+  group_placement_radius 3
+ elseif EXTRA_LOW_DEER
+  number_of_groups 1
+  number_of_objects 5
+  group_placement_radius 3
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ min_distance_to_players 40
+ max_distance_to_players 120
+ min_distance_group_placement 10
+ if     KF_RD_XDEER_X     resource_delta 32627
+ elseif KF_RD_XDEER_H     resource_delta 1000
+ elseif KF_RD_XDEER_M     resource_delta 300
+ elseif KF_RD_XDEER_L     resource_delta 200
+ elseif KF_RD_XDEER_NO    resource_delta 0
+ elseif KF_RD_XDEER_NEG_L resource_delta -50
+ elseif KF_RD_XDEER_NEG_M resource_delta -70
+ elseif KF_RD_XDEER_NEG_H resource_delta -110
+ elseif KF_RD_XDEER_NEG_X resource_delta -139
+ endif
+}
+create_object BOAR
+{
+ if STANDARD_BOAR
+  number_of_groups 2
+  number_of_objects 1
+  group_placement_radius 3
+ elseif HIGH_BOAR
+  number_of_groups 2
+  number_of_objects 1
+  group_placement_radius 3
+ elseif EXTRA_HIGH_BOAR
+  number_of_groups 3
+  number_of_objects 1
+  group_placement_radius 3
+ elseif LOW_BOAR
+  number_of_groups 1
+  number_of_objects 1
+  group_placement_radius 3
+ elseif EXTRA_LOW_BOAR
+  number_of_groups 1
+  number_of_objects 1
+  group_placement_radius 3
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ min_distance_to_players 40
+ max_distance_to_players 120
+ min_distance_group_placement 10
+ if     KF_RD_XBOAR_X     resource_delta 32427
+ elseif KF_RD_XBOAR_H     resource_delta 1000
+ elseif KF_RD_XBOAR_M     resource_delta 500
+ elseif KF_RD_XBOAR_L     resource_delta 400
+ elseif KF_RD_XBOAR_NO    resource_delta 0
+ elseif KF_RD_XBOAR_NEG_L resource_delta -100
+ elseif KF_RD_XBOAR_NEG_M resource_delta -250
+ elseif KF_RD_XBOAR_NEG_H resource_delta -295
+ elseif KF_RD_XBOAR_NEG_X resource_delta -339
+ endif
+}
+endif
+
+if GIGANTIC_MAP
+create_object DEER
+{
+ if STANDARD_DEER
+  number_of_groups 3
+  number_of_objects 5
+  group_placement_radius 3
+ elseif HIGH_DEER
+  number_of_groups 4
+  number_of_objects 5
+  group_placement_radius 3
+ elseif EXTRA_HIGH_DEER
+  number_of_groups 6
+  number_of_objects 5
+  group_placement_radius 3
+ elseif LOW_DEER
+  number_of_groups 2
+  number_of_objects 4
+  group_placement_radius 3
+ elseif EXTRA_LOW_DEER
+  number_of_groups 1
+  number_of_objects 5
+  group_placement_radius 3
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ min_distance_to_players 40
+ max_distance_to_players 120
+ min_distance_group_placement 10
+ if     KF_RD_XDEER_X     resource_delta 32627
+ elseif KF_RD_XDEER_H     resource_delta 1000
+ elseif KF_RD_XDEER_M     resource_delta 300
+ elseif KF_RD_XDEER_L     resource_delta 200
+ elseif KF_RD_XDEER_NO    resource_delta 0
+ elseif KF_RD_XDEER_NEG_L resource_delta -50
+ elseif KF_RD_XDEER_NEG_M resource_delta -70
+ elseif KF_RD_XDEER_NEG_H resource_delta -110
+ elseif KF_RD_XDEER_NEG_X resource_delta -139
+ endif
+}
+create_object BOAR
+{
+ if STANDARD_BOAR
+  number_of_groups 3
+  number_of_objects 1
+  group_placement_radius 3
+ elseif HIGH_BOAR
+  number_of_groups 4
+  number_of_objects 1
+  group_placement_radius 3
+ elseif EXTRA_HIGH_BOAR
+  number_of_groups 5
+  number_of_objects 1
+  group_placement_radius 3
+ elseif LOW_BOAR
+  number_of_groups 2
+  number_of_objects 1
+  group_placement_radius 3
+ elseif EXTRA_LOW_BOAR
+  number_of_groups 1
+  number_of_objects 1
+  group_placement_radius 3
+ endif
+ set_tight_grouping
+ set_gaia_object_only
+ min_distance_to_players 40
+ max_distance_to_players 120
+ min_distance_group_placement 10
+ if     KF_RD_XBOAR_X     resource_delta 32427
+ elseif KF_RD_XBOAR_H     resource_delta 1000
+ elseif KF_RD_XBOAR_M     resource_delta 500
+ elseif KF_RD_XBOAR_L     resource_delta 400
+ elseif KF_RD_XBOAR_NO    resource_delta 0
+ elseif KF_RD_XBOAR_NEG_L resource_delta -100
+ elseif KF_RD_XBOAR_NEG_M resource_delta -250
+ elseif KF_RD_XBOAR_NEG_H resource_delta -295
+ elseif KF_RD_XBOAR_NEG_X resource_delta -339
+ endif
+}
+endif
+
+if TINY_MAP
+ if NO_RANDOM_GOLD
+ else
+create_object GOLD
+ {
+  if EXTRA_LOW_RANDOM_GOLD
+   number_of_groups 1
+   number_of_objects 3
+   group_placement_radius 2
+  elseif LOW_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 2
+   group_placement_radius 1
+  elseif STANDARD_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 3
+   group_placement_radius 2
+  elseif HIGH_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 4
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_GOLD
+   number_of_groups 3
+   number_of_objects 6
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XGOLD_X     resource_delta 31967
+  elseif KF_RD_XGOLD_H     resource_delta 5000
+  elseif KF_RD_XGOLD_M     resource_delta 2500
+  elseif KF_RD_XGOLD_L     resource_delta 1000
+  elseif KF_RD_XGOLD_NO    resource_delta 0
+  elseif KF_RD_XGOLD_NEG_L resource_delta -200
+  elseif KF_RD_XGOLD_NEG_M resource_delta -400
+  elseif KF_RD_XGOLD_NEG_H resource_delta -700
+  elseif KF_RD_XGOLD_NEG_X resource_delta -799
+  endif
+ }
+ endif
+endif
+
+if SMALL_MAP
+ if NO_RANDOM_GOLD
+ else
+create_object GOLD
+{
+  if EXTRA_LOW_RANDOM_GOLD
+   number_of_groups 1
+   number_of_objects 3
+   group_placement_radius 2
+  elseif LOW_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 2
+   group_placement_radius 1
+  elseif STANDARD_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 3
+   group_placement_radius 2
+  elseif HIGH_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 4
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_GOLD
+   number_of_groups 3
+   number_of_objects 6
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XGOLD_X     resource_delta 31967
+  elseif KF_RD_XGOLD_H     resource_delta 5000
+  elseif KF_RD_XGOLD_M     resource_delta 2500
+  elseif KF_RD_XGOLD_L     resource_delta 1000
+  elseif KF_RD_XGOLD_NO    resource_delta 0
+  elseif KF_RD_XGOLD_NEG_L resource_delta -200
+  elseif KF_RD_XGOLD_NEG_M resource_delta -400
+  elseif KF_RD_XGOLD_NEG_H resource_delta -700
+  elseif KF_RD_XGOLD_NEG_X resource_delta -799
+  endif
+ }
+ endif
+endif
+
+if MEDIUM_MAP
+ if NO_RANDOM_GOLD
+ else
+create_object GOLD
+{
+  if EXTRA_LOW_RANDOM_GOLD
+   number_of_groups 1
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+ elseif LOW_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 1
+ elseif STANDARD_RANDOM_GOLD
+   number_of_groups 3
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_GOLD
+   number_of_groups 4
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_GOLD
+   number_of_groups 5
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XGOLD_X     resource_delta 31967
+  elseif KF_RD_XGOLD_H     resource_delta 5000
+  elseif KF_RD_XGOLD_M     resource_delta 2500
+  elseif KF_RD_XGOLD_L     resource_delta 1000
+  elseif KF_RD_XGOLD_NO    resource_delta 0
+  elseif KF_RD_XGOLD_NEG_L resource_delta -200
+  elseif KF_RD_XGOLD_NEG_M resource_delta -400
+  elseif KF_RD_XGOLD_NEG_H resource_delta -700
+  elseif KF_RD_XGOLD_NEG_X resource_delta -799
+  endif
+ }
+ endif
+endif
+
+if LARGE_MAP
+ if NO_RANDOM_GOLD
+ else
+create_object GOLD
+{
+  if EXTRA_LOW_RANDOM_GOLD
+   number_of_groups 1
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 1
+  elseif STANDARD_RANDOM_GOLD
+   number_of_groups 3
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_GOLD
+   number_of_groups 4
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_GOLD
+   number_of_groups 5
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XGOLD_X     resource_delta 31967
+  elseif KF_RD_XGOLD_H     resource_delta 5000
+  elseif KF_RD_XGOLD_M     resource_delta 2500
+  elseif KF_RD_XGOLD_L     resource_delta 1000
+  elseif KF_RD_XGOLD_NO    resource_delta 0
+  elseif KF_RD_XGOLD_NEG_L resource_delta -200
+  elseif KF_RD_XGOLD_NEG_M resource_delta -400
+  elseif KF_RD_XGOLD_NEG_H resource_delta -700
+  elseif KF_RD_XGOLD_NEG_X resource_delta -799
+  endif
+ }
+ endif
+endif
+
+if HUGE_MAP
+ if NO_RANDOM_GOLD
+ else
+create_object GOLD
+{
+  if EXTRA_LOW_RANDOM_GOLD
+   number_of_groups 2
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_GOLD
+   number_of_groups 3
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 1
+  elseif STANDARD_RANDOM_GOLD
+   number_of_groups 4
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_GOLD
+   number_of_groups 5
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_GOLD
+   number_of_groups 6
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XGOLD_X     resource_delta 31967
+  elseif KF_RD_XGOLD_H     resource_delta 5000
+  elseif KF_RD_XGOLD_M     resource_delta 2500
+  elseif KF_RD_XGOLD_L     resource_delta 1000
+  elseif KF_RD_XGOLD_NO    resource_delta 0
+  elseif KF_RD_XGOLD_NEG_L resource_delta -200
+  elseif KF_RD_XGOLD_NEG_M resource_delta -400
+  elseif KF_RD_XGOLD_NEG_H resource_delta -700
+  elseif KF_RD_XGOLD_NEG_X resource_delta -799
+  endif
+ }
+ endif
+endif
+
+if GIGANTIC_MAP
+ if NO_RANDOM_GOLD
+ else
+create_object GOLD
+{
+  if EXTRA_LOW_RANDOM_GOLD
+   number_of_groups 3
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_GOLD
+   number_of_groups 4
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 1
+  elseif STANDARD_RANDOM_GOLD
+   number_of_groups 5
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_GOLD
+   number_of_groups 6
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_GOLD
+   number_of_groups 7
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XGOLD_X     resource_delta 31967
+  elseif KF_RD_XGOLD_H     resource_delta 5000
+  elseif KF_RD_XGOLD_M     resource_delta 2500
+  elseif KF_RD_XGOLD_L     resource_delta 1000
+  elseif KF_RD_XGOLD_NO    resource_delta 0
+  elseif KF_RD_XGOLD_NEG_L resource_delta -200
+  elseif KF_RD_XGOLD_NEG_M resource_delta -400
+  elseif KF_RD_XGOLD_NEG_H resource_delta -700
+  elseif KF_RD_XGOLD_NEG_X resource_delta -799
+  endif
+ }
+ endif
+endif
+
+if TINY_MAP
+ if NO_RANDOM_STONE
+ else
+create_object STONE
+{
+  if EXTRA_LOW_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 2
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif STANDARD_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 5
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XSTONE_X     resource_delta 32417
+  elseif KF_RD_XSTONE_H     resource_delta 1000
+  elseif KF_RD_XSTONE_M     resource_delta 600
+  elseif KF_RD_XSTONE_L     resource_delta 450
+  elseif KF_RD_XSTONE_NO    resource_delta 0
+  elseif KF_RD_XSTONE_NEG_L resource_delta -100
+  elseif KF_RD_XSTONE_NEG_M resource_delta -200
+  elseif KF_RD_XSTONE_NEG_H resource_delta -300
+  elseif KF_RD_XSTONE_NEG_X resource_delta -349
+  endif
+ }
+ endif
+endif
+
+if SMALL_MAP
+ if NO_RANDOM_STONE
+ else
+create_object STONE
+{
+  if EXTRA_LOW_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 2
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif STANDARD_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 5
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_STONE
+   number_of_groups 1
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XSTONE_X     resource_delta 32417
+  elseif KF_RD_XSTONE_H     resource_delta 1000
+  elseif KF_RD_XSTONE_M     resource_delta 600
+  elseif KF_RD_XSTONE_L     resource_delta 450
+  elseif KF_RD_XSTONE_NO    resource_delta 0
+  elseif KF_RD_XSTONE_NEG_L resource_delta -100
+  elseif KF_RD_XSTONE_NEG_M resource_delta -200
+  elseif KF_RD_XSTONE_NEG_H resource_delta -300
+  elseif KF_RD_XSTONE_NEG_X resource_delta -349
+  endif
+ }
+ endif
+endif
+
+if MEDIUM_MAP
+ if NO_RANDOM_STONE
+ else
+create_object STONE
+{
+  if EXTRA_LOW_RANDOM_STONE
+   number_of_groups 2
+   number_of_objects 2
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_STONE
+   number_of_groups 2
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif STANDARD_RANDOM_STONE
+   number_of_groups 2
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_STONE
+   number_of_groups 2
+   number_of_objects 5
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_STONE
+   number_of_groups 2
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XSTONE_X     resource_delta 32417
+  elseif KF_RD_XSTONE_H     resource_delta 1000
+  elseif KF_RD_XSTONE_M     resource_delta 600
+  elseif KF_RD_XSTONE_L     resource_delta 450
+  elseif KF_RD_XSTONE_NO    resource_delta 0
+  elseif KF_RD_XSTONE_NEG_L resource_delta -100
+  elseif KF_RD_XSTONE_NEG_M resource_delta -200
+  elseif KF_RD_XSTONE_NEG_H resource_delta -300
+  elseif KF_RD_XSTONE_NEG_X resource_delta -349
+  endif
+ }
+ endif
+endif
+
+if LARGE_MAP
+ if NO_RANDOM_STONE
+ else
+create_object STONE
+{
+  if EXTRA_LOW_RANDOM_STONE
+   number_of_groups 3
+   number_of_objects 2
+   group_variance  1
+   group_placement_radius 2
+  elseif LOW_RANDOM_STONE
+   number_of_groups 3
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif STANDARD_RANDOM_STONE
+   number_of_groups 3
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_STONE
+   number_of_groups 3
+   number_of_objects 5
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_STONE
+   number_of_groups 3
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XSTONE_X     resource_delta 32417
+  elseif KF_RD_XSTONE_H     resource_delta 1000
+  elseif KF_RD_XSTONE_M     resource_delta 600
+  elseif KF_RD_XSTONE_L     resource_delta 450
+  elseif KF_RD_XSTONE_NO    resource_delta 0
+  elseif KF_RD_XSTONE_NEG_L resource_delta -100
+  elseif KF_RD_XSTONE_NEG_M resource_delta -200
+  elseif KF_RD_XSTONE_NEG_H resource_delta -300
+  elseif KF_RD_XSTONE_NEG_X resource_delta -349
+  endif
+ }
+ endif
+endif
+
+if HUGE_MAP
+ if NO_RANDOM_STONE
+ else
+create_object STONE
+{
+  if EXTRA_LOW_RANDOM_STONE
+   number_of_groups 4
+   number_of_objects 2
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_STONE
+   number_of_groups 4
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif STANDARD_RANDOM_STONE
+   number_of_groups 4
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_STONE
+   number_of_groups 4
+   number_of_objects 5
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_STONE
+   number_of_groups 4
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XSTONE_X     resource_delta 32417
+  elseif KF_RD_XSTONE_H     resource_delta 1000
+  elseif KF_RD_XSTONE_M     resource_delta 600
+  elseif KF_RD_XSTONE_L     resource_delta 450
+  elseif KF_RD_XSTONE_NO    resource_delta 0
+  elseif KF_RD_XSTONE_NEG_L resource_delta -100
+  elseif KF_RD_XSTONE_NEG_M resource_delta -200
+  elseif KF_RD_XSTONE_NEG_H resource_delta -300
+  elseif KF_RD_XSTONE_NEG_X resource_delta -349
+  endif
+ }
+ endif
+endif
+
+if GIGANTIC_MAP
+ if NO_RANDOM_STONE
+ else
+create_object STONE
+{
+  if EXTRA_LOW_RANDOM_STONE
+   number_of_groups 5
+   number_of_objects 2
+   group_variance 1
+   group_placement_radius 2
+  elseif LOW_RANDOM_STONE
+   number_of_groups 5
+   number_of_objects 3
+   group_variance 1
+   group_placement_radius 2
+  elseif STANDARD_RANDOM_STONE
+   number_of_groups 5
+   number_of_objects 4
+   group_variance 1
+   group_placement_radius 2
+  elseif HIGH_RANDOM_STONE
+   number_of_groups 5
+   number_of_objects 5
+   group_variance 1
+   group_placement_radius 2
+  elseif EXTRA_HIGH_RANDOM_STONE
+   number_of_groups 5
+   number_of_objects 6
+   group_variance 1
+   group_placement_radius 2
+  endif
+  set_tight_grouping
+  set_gaia_object_only
+  min_distance_to_players 40
+  min_distance_group_placement 14
+  if     KF_RD_XSTONE_X     resource_delta 32417
+  elseif KF_RD_XSTONE_H     resource_delta 1000
+  elseif KF_RD_XSTONE_M     resource_delta 600
+  elseif KF_RD_XSTONE_L     resource_delta 450
+  elseif KF_RD_XSTONE_NO    resource_delta 0
+  elseif KF_RD_XSTONE_NEG_L resource_delta -100
+  elseif KF_RD_XSTONE_NEG_M resource_delta -200
+  elseif KF_RD_XSTONE_NEG_H resource_delta -300
+  elseif KF_RD_XSTONE_NEG_X resource_delta -349
+  endif
+ }
+ endif
+endif
+
+if WATER_MAP
+create_object MARLIN1
+{
+ if NO_MARLIN
+  number_of_objects 0
+ elseif EXTRA_LOW_MARLIN
+  number_of_objects 4
+ elseif LOW_MARLIN
+  number_of_objects 7
+ elseif STANDARD_MARLIN
+  number_of_objects 10
+ elseif HIGH_MARLIN
+  number_of_objects 13
+ elseif EXTRA_HIGH_MARLIN
+  number_of_objects 16
+ endif
+ set_scaling_to_map_size
+ set_gaia_object_only
+ max_distance_to_other_zones 7
+ min_distance_group_placement 7
+ if     KF_RD_DEEPFISH_X     resource_delta 32542
+ elseif KF_RD_DEEPFISH_H     resource_delta 1000
+ elseif KF_RD_DEEPFISH_M     resource_delta 600
+ elseif KF_RD_DEEPFISH_L     resource_delta 450
+ elseif KF_RD_DEEPFISH_NO    resource_delta 0
+ elseif KF_RD_DEEPFISH_NEG_L resource_delta -100
+ elseif KF_RD_DEEPFISH_NEG_M resource_delta -200
+ elseif KF_RD_DEEPFISH_NEG_H resource_delta -300
+ elseif KF_RD_DEEPFISH_NEG_X resource_delta -349
+ endif
+}
+
+create_object SNAPPER
+{
+ if NO_FISH
+  number_of_objects 0
+ elseif EXTRA_LOW_FISH
+  number_of_objects 5
+ elseif LOW_FISH
+  number_of_objects 10
+ elseif STANDARD_FISH
+  number_of_objects 12
+ elseif HIGH_FISH
+  number_of_objects 15
+ elseif EXTRA_HIGH_FISH
+  number_of_objects 20
+ endif
+ set_scaling_to_map_size
+ set_gaia_object_only
+ max_distance_to_other_zones 4
+ min_distance_group_placement 4
+ if     KF_RD_DEEPFISH_X     resource_delta 32542
+ elseif KF_RD_DEEPFISH_H     resource_delta 1000
+ elseif KF_RD_DEEPFISH_M     resource_delta 600
+ elseif KF_RD_DEEPFISH_L     resource_delta 450
+ elseif KF_RD_DEEPFISH_NO    resource_delta 0
+ elseif KF_RD_DEEPFISH_NEG_L resource_delta -100
+ elseif KF_RD_DEEPFISH_NEG_M resource_delta -200
+ elseif KF_RD_DEEPFISH_NEG_H resource_delta -300
+ elseif KF_RD_DEEPFISH_NEG_X resource_delta -349
+ endif
+}
+create_object SNAPPER
+{
+ if NO_FISH
+  number_of_objects 0
+ elseif EXTRA_LOW_FISH
+  number_of_objects 5
+ elseif LOW_FISH
+  number_of_objects 10
+ elseif STANDARD_FISH
+  number_of_objects 13
+ elseif HIGH_FISH
+  number_of_objects 15
+ elseif EXTRA_HIGH_FISH
+  number_of_objects 20
+ endif
+ set_scaling_to_map_size
+ set_gaia_object_only
+ max_distance_to_other_zones 4
+ min_distance_group_placement 4
+ if     KF_RD_DEEPFISH_X     resource_delta 32542
+ elseif KF_RD_DEEPFISH_H     resource_delta 1000
+ elseif KF_RD_DEEPFISH_M     resource_delta 600
+ elseif KF_RD_DEEPFISH_L     resource_delta 450
+ elseif KF_RD_DEEPFISH_NO    resource_delta 0
+ elseif KF_RD_DEEPFISH_NEG_L resource_delta -100
+ elseif KF_RD_DEEPFISH_NEG_M resource_delta -200
+ elseif KF_RD_DEEPFISH_NEG_H resource_delta -300
+ elseif KF_RD_DEEPFISH_NEG_X resource_delta -349
+ endif
+}
+create_object SHORE_FISH
+{
+ if NO_SHORE_FISH
+  number_of_objects 0
+ elseif EXTRA_LOW_SHORE_FISH
+  number_of_objects 5
+ elseif LOW_SHORE_FISH
+  number_of_objects 15
+ elseif STANDARD_SHORE_FISH
+  number_of_objects 25
+ elseif HIGH_SHORE_FISH
+  number_of_objects 35
+ elseif EXTRA_HIGH_SHORE_FISH
+  number_of_objects 45
+ endif
+ set_scaling_to_map_size
+ min_distance_group_placement 2
+ set_gaia_object_only
+ if     KF_RD_SHOREFISH_X     resource_delta 32567
+ elseif KF_RD_SHOREFISH_H     resource_delta 1000
+ elseif KF_RD_SHOREFISH_M     resource_delta 350
+ elseif KF_RD_SHOREFISH_L     resource_delta 250
+ elseif KF_RD_SHOREFISH_NO    resource_delta 0
+ elseif KF_RD_SHOREFISH_NEG_L resource_delta -75
+ elseif KF_RD_SHOREFISH_NEG_M resource_delta -120
+ elseif KF_RD_SHOREFISH_NEG_H resource_delta -160
+ elseif KF_RD_SHOREFISH_NEG_X resource_delta -199
+ endif
+}
+else
+create_object SNAPPER
+{
+ if NO_FISH
+  number_of_objects 0
+ elseif EXTRA_LOW_FISH
+  number_of_objects 3
+ elseif LOW_FISH
+  number_of_objects 6
+ elseif STANDARD_FISH
+  number_of_objects 9
+ elseif HIGH_FISH
+  number_of_objects 12
+ elseif EXTRA_HIGH_FISH
+  number_of_objects 15
+ endif
+ set_scaling_to_map_size
+ set_gaia_object_only
+ max_distance_to_other_zones 4
+ min_distance_group_placement 4
+ if     KF_RD_DEEPFISH_X     resource_delta 32542
+ elseif KF_RD_DEEPFISH_H     resource_delta 1000
+ elseif KF_RD_DEEPFISH_M     resource_delta 600
+ elseif KF_RD_DEEPFISH_L     resource_delta 450
+ elseif KF_RD_DEEPFISH_NO    resource_delta 0
+ elseif KF_RD_DEEPFISH_NEG_L resource_delta -100
+ elseif KF_RD_DEEPFISH_NEG_M resource_delta -200
+ elseif KF_RD_DEEPFISH_NEG_H resource_delta -300
+ elseif KF_RD_DEEPFISH_NEG_X resource_delta -349
+ endif
+}
+create_object SNAPPER
+{
+ if NO_FISH
+  number_of_objects 0
+ elseif EXTRA_LOW_FISH
+  number_of_objects 3
+ elseif LOW_FISH
+  number_of_objects 6
+ elseif STANDARD_FISH
+  number_of_objects 9
+ elseif HIGH_FISH
+  number_of_objects 12
+ elseif EXTRA_HIGH_FISH
+  number_of_objects 15
+ endif
+ set_scaling_to_map_size
+ set_gaia_object_only
+ max_distance_to_other_zones 4
+ min_distance_group_placement 4
+ if     KF_RD_DEEPFISH_X     resource_delta 32542
+ elseif KF_RD_DEEPFISH_H     resource_delta 1000
+ elseif KF_RD_DEEPFISH_M     resource_delta 600
+ elseif KF_RD_DEEPFISH_L     resource_delta 450
+ elseif KF_RD_DEEPFISH_NO    resource_delta 0
+ elseif KF_RD_DEEPFISH_NEG_L resource_delta -100
+ elseif KF_RD_DEEPFISH_NEG_M resource_delta -200
+ elseif KF_RD_DEEPFISH_NEG_H resource_delta -300
+ elseif KF_RD_DEEPFISH_NEG_X resource_delta -349
+ endif
+}
+create_object SHORE_FISH
+{
+ if NO_SHORE_FISH
+  number_of_objects 0
+ elseif EXTRA_LOW_SHORE_FISH
+  number_of_objects 5
+ elseif LOW_SHORE_FISH
+  number_of_objects 10
+ elseif STANDARD_SHORE_FISH
+  number_of_objects 15
+ elseif HIGH_SHORE_FISH
+  number_of_objects 25
+ elseif EXTRA_HIGH_SHORE_FISH
+  number_of_objects 30
+ endif
+ set_scaling_to_map_size
+ min_distance_group_placement 3
+ set_gaia_object_only
+ if     KF_RD_DEEPFISH_X     resource_delta 32542
+ elseif KF_RD_DEEPFISH_H     resource_delta 1000
+ elseif KF_RD_DEEPFISH_M     resource_delta 600
+ elseif KF_RD_DEEPFISH_L     resource_delta 450
+ elseif KF_RD_DEEPFISH_NO    resource_delta 0
+ elseif KF_RD_DEEPFISH_NEG_L resource_delta -100
+ elseif KF_RD_DEEPFISH_NEG_M resource_delta -200
+ elseif KF_RD_DEEPFISH_NEG_H resource_delta -300
+ elseif KF_RD_DEEPFISH_NEG_X resource_delta -349
+ endif
+}
+endif
+
+if GRASS_TILE
+   create_object OAKTREE
+elseif TROPICAL_TILE
+   create_object JUNGLE_TREE
+elseif SNOW_TILE
+   create_object SNOW_PINE_TREE
+elseif DESERT_TILE
+   create_object PALMTREE
+endif
+{
+number_of_objects 15
+set_gaia_object_only
+set_scaling_to_map_size
+min_distance_to_players 8
+if     KF_RD_XSTRAGGLER_X     resource_delta 32667
+elseif KF_RD_XSTRAGGLER_H     resource_delta 1000
+elseif KF_RD_XSTRAGGLER_M     resource_delta 200
+elseif KF_RD_XSTRAGGLER_L     resource_delta 150
+elseif KF_RD_XSTRAGGLER_NO    resource_delta 0
+elseif KF_RD_XSTRAGGLER_NEG_L resource_delta -50
+elseif KF_RD_XSTRAGGLER_NEG_M resource_delta -75
+elseif KF_RD_XSTRAGGLER_NEG_H resource_delta -90
+elseif KF_RD_XSTRAGGLER_NEG_X resource_delta -99
+endif
+}
+
+if GRASS_TILE
+   create_object PINETREE
+elseif TROPICAL_TILE
+   create_object JUNGLE_TREE
+elseif SNOW_TILE
+   create_object SNOW_PINE_TREE
+elseif DESERT_TILE
+   create_object PALMTREE
+endif
+{
+number_of_objects 15
+set_gaia_object_only
+set_scaling_to_map_size
+min_distance_to_players 8
+if     KF_RD_XSTRAGGLER_X     resource_delta 32667
+elseif KF_RD_XSTRAGGLER_H     resource_delta 1000
+elseif KF_RD_XSTRAGGLER_M     resource_delta 200
+elseif KF_RD_XSTRAGGLER_L     resource_delta 150
+elseif KF_RD_XSTRAGGLER_NO    resource_delta 0
+elseif KF_RD_XSTRAGGLER_NEG_L resource_delta -50
+elseif KF_RD_XSTRAGGLER_NEG_M resource_delta -75
+elseif KF_RD_XSTRAGGLER_NEG_H resource_delta -90
+elseif KF_RD_XSTRAGGLER_NEG_X resource_delta -99
+endif
+}
+
+if EXTRA_HIGH_SHEEP_GROUPS
+   if TROPICAL_TILE
+      create_object TURKEY
+   else
+      create_object SHEEP
+   endif
+{
+ number_of_groups 4
+ if STANDARD_SHEEP
+  number_of_objects 2
+ elseif HIGH_SHEEP
+  number_of_objects 2
+ elseif EXTRA_HIGH_SHEEP
+  number_of_objects 3
+ elseif LOW_SHEEP
+  number_of_objects 2
+ elseif EXTRA_LOW_SHEEP
+  number_of_objects 1
+ endif
+ set_loose_grouping
+ set_scaling_to_map_size
+ set_gaia_object_only
+ min_distance_group_placement 10
+ min_distance_to_players 40
+ max_distance_to_players 120
+ if     KF_RD_XSHEEP_X     resource_delta 32667
+ elseif KF_RD_XSHEEP_H     resource_delta 1000
+ elseif KF_RD_XSHEEP_M     resource_delta 200
+ elseif KF_RD_XSHEEP_L     resource_delta 150
+ elseif KF_RD_XSHEEP_NO    resource_delta 0 
+ elseif KF_RD_XSHEEP_NEG_L resource_delta -50
+ elseif KF_RD_XSHEEP_NEG_M resource_delta -75
+ elseif KF_RD_XSHEEP_NEG_H resource_delta -90
+ elseif KF_RD_XSHEEP_NEG_X resource_delta -99
+ endif
+}
+endif
+
+/* These are the straggler trees near every Town Center. */
+
+if GRASS_TILE
+ create_object OAKTREE
+elseif TROPICAL_TILE
+ create_object JUNGLE_TREE
+elseif SNOW_TILE
+ create_object SNOW_PINE_TREE
+elseif DESERT_TILE
+ create_object PALMTREE
+endif
+{
+if EXTRA_LOW_PLAYER_TREES
+ number_of_objects 1
+elseif LOW_PLAYER_TREES
+ number_of_objects 1
+elseif STANDARD_PLAYER_TREES
+ number_of_objects 2
+elseif HIGH_PLAYER_TREES
+ number_of_objects 3
+elseif EXTRA_HIGH_PLAYER_TREES
+ number_of_objects 3
+endif
+set_gaia_object_only
+set_place_for_every_player
+min_distance_to_players 4
+max_distance_to_players 5
+min_distance_group_placement 2
+if     KF_RD_STRAGGLER_X     resource_delta 32667
+elseif KF_RD_STRAGGLER_H     resource_delta 1000
+elseif KF_RD_STRAGGLER_M     resource_delta 200
+elseif KF_RD_STRAGGLER_L     resource_delta 150
+elseif KF_RD_STRAGGLER_NO    resource_delta 0
+elseif KF_RD_STRAGGLER_NEG_L resource_delta -50
+elseif KF_RD_STRAGGLER_NEG_M resource_delta -75
+elseif KF_RD_STRAGGLER_NEG_H resource_delta -90
+elseif KF_RD_STRAGGLER_NEG_X resource_delta -99
+endif
+}
+
+if GRASS_TILE
+ create_object OAKTREE
+elseif TROPICAL_TILE
+ create_object JUNGLE_TREE
+elseif SNOW_TILE
+ create_object SNOW_PINE_TREE
+elseif DESERT_TILE
+ create_object PALMTREE
+endif
+{
+if EXTRA_LOW_PLAYER_TREES
+ number_of_objects 1
+elseif LOW_PLAYER_TREES
+ number_of_objects 2
+elseif STANDARD_PLAYER_TREES
+ number_of_objects 3
+elseif HIGH_PLAYER_TREES
+ number_of_objects 3
+elseif EXTRA_HIGH_PLAYER_TREES
+ number_of_objects 4
+endif
+set_gaia_object_only
+set_place_for_every_player
+min_distance_to_players 6
+max_distance_to_players 8
+min_distance_group_placement 2
+if     KF_RD_STRAGGLER_X     resource_delta 32667
+elseif KF_RD_STRAGGLER_H     resource_delta 1000
+elseif KF_RD_STRAGGLER_M     resource_delta 200
+elseif KF_RD_STRAGGLER_L     resource_delta 150
+elseif KF_RD_STRAGGLER_NO    resource_delta 0
+elseif KF_RD_STRAGGLER_NEG_L resource_delta -50
+elseif KF_RD_STRAGGLER_NEG_M resource_delta -75
+elseif KF_RD_STRAGGLER_NEG_H resource_delta -90
+elseif KF_RD_STRAGGLER_NEG_X resource_delta -99
+endif
+}
+
+
+<ELEVATION_GENERATION>
+
+if KF_ELEVATION_ZERO
+elseif KF_ELEVATION_SEVEN
+ create_elevation 7
+ {
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if     TINY_MAP     number_of_tiles 3628
+ elseif SMALL_MAP    number_of_tiles 6451
+ elseif MEDIUM_MAP   number_of_tiles 10080
+ elseif LARGE_MAP    number_of_tiles 14515
+ elseif HUGE_MAP     number_of_tiles 28000
+ elseif GIGANTIC_MAP number_of_tiles 43417
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+elseif KF_ELEVATION_SIX
+create_elevation 6
+{
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if TINY_MAP 
+  number_of_tiles 3110
+ elseif SMALL_MAP
+  number_of_tiles 5530
+ elseif MEDIUM_MAP
+  number_of_tiles 8640
+ elseif LARGE_MAP
+  number_of_tiles 12442
+ elseif HUGE_MAP
+  number_of_tiles 24000
+ elseif GIGANTIC_MAP
+  number_of_tiles 37215
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+elseif KF_ELEVATION_FIVE
+create_elevation 5
+{
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if TINY_MAP
+  number_of_tiles 2592
+ elseif SMALL_MAP
+  number_of_tiles 4608
+ elseif MEDIUM_MAP
+  number_of_tiles 7200
+ elseif LARGE_MAP
+  number_of_tiles 10368
+ elseif HUGE_MAP
+  number_of_tiles 20000
+ elseif GIGANTIC_MAP
+  number_of_tiles 31013
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+elseif KF_ELEVATION_FOUR
+create_elevation 4
+{
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if TINY_MAP
+  number_of_tiles 2074
+ elseif SMALL_MAP
+  number_of_tiles 3686
+ elseif MEDIUM_MAP
+  number_of_tiles 5760
+ elseif LARGE_MAP
+  number_of_tiles 8294
+ elseif HUGE_MAP
+  number_of_tiles 16000
+ elseif GIGANTIC_MAP
+  number_of_tiles 24810
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+elseif KF_ELEVATION_THREE
+create_elevation 3
+{
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if TINY_MAP
+  number_of_tiles 1555
+ elseif SMALL_MAP
+  number_of_tiles 2765
+ elseif MEDIUM_MAP
+  number_of_tiles 4320
+ elseif LARGE_MAP
+  number_of_tiles 6221
+ elseif HUGE_MAP
+  number_of_tiles 12000
+ elseif GIGANTIC_MAP
+  number_of_tiles 18608
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+elseif KF_ELEVATION_TWO
+create_elevation 2
+{
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if TINY_MAP
+  number_of_tiles 1037
+ elseif SMALL_MAP
+  number_of_tiles 1843
+ elseif MEDIUM_MAP
+  number_of_tiles 2880
+ elseif LARGE_MAP
+  number_of_tiles 4147
+ elseif HUGE_MAP
+  number_of_tiles 8000
+ elseif GIGANTIC_MAP
+  number_of_tiles 12405
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+elseif KF_ELEVATION_ONE
+create_elevation 1
+{
+ if     GRASS_TILE    base_terrain GRASS
+ elseif TROPICAL_TILE base_terrain GRASS3
+ elseif SNOW_TILE     base_terrain GRASS_SNOW
+ elseif DESERT_TILE   base_terrain DIRT
+ endif
+ if     KF_NOCLUMPS      number_of_clumps 2
+ elseif KF_LOW_CLUMPS    number_of_clumps 10
+ elseif KF_MEDIUM_CLUMPS number_of_clumps 14
+ elseif KF_HIGH_CLUMPS   number_of_clumps 20
+ endif
+ if TINY_MAP
+  number_of_tiles 518
+ elseif SMALL_MAP
+  number_of_tiles 922
+ elseif MEDIUM_MAP
+  number_of_tiles 1440
+ elseif LARGE_MAP
+  number_of_tiles 2074
+ elseif HUGE_MAP
+  number_of_tiles 4000
+ elseif GIGANTIC_MAP
+  number_of_tiles 6203
+ endif
+ set_scale_by_groups
+ set_scale_by_size
+}
+endif
+
+if NO_CLIFF
+else
+<CLIFF_GENERATION>
+ if LOW_CLIFF
+  min_number_of_cliffs 3
+  max_number_of_cliffs 6
+ elseif NORMAL_CLIFF
+  min_number_of_cliffs 5
+  max_number_of_cliffs 8
+ elseif HIGH_CLIFF
+  min_number_of_cliffs 7
+  max_number_of_cliffs 10
+ elseif HIGH_CLIFF
+  min_number_of_cliffs 10
+  max_number_of_cliffs 15
+ endif
+ start_random
+  percent_chance 20 min_length_of_cliff 3
+  percent_chance 20 min_length_of_cliff 4
+  percent_chance 20 min_length_of_cliff 5
+  percent_chance 20 min_length_of_cliff 6
+  percent_chance 20 min_length_of_cliff 7
+ end_random 
+ start_random
+  percent_chance 20 max_length_of_cliff 8
+  percent_chance 20 max_length_of_cliff 9
+  percent_chance 20 max_length_of_cliff 10
+  percent_chance 20 max_length_of_cliff 11
+  percent_chance 20 max_length_of_cliff 12
+ end_random 
+ start_random
+  percent_chance 20 cliff_curliness 8
+  percent_chance 20 cliff_curliness 9
+  percent_chance 20 cliff_curliness 10
+  percent_chance 20 cliff_curliness 11
+  percent_chance 20 cliff_curliness 12
+ end_random 
+ start_random
+  percent_chance 20 min_distance_cliffs 2
+  percent_chance 20 min_distance_cliffs 3
+  percent_chance 20 min_distance_cliffs 4
+  percent_chance 20 min_distance_cliffs 5
+  percent_chance 20 min_distance_cliffs 6
+ end_random 
+endif
+
+if KF_NOMAD
+ <CONNECTION_GENERATION>
+ create_connect_all_players_land
+ {
+ if GRASS_TILE
+  replace_terrain FOREST MOSS_ROAD
+  terrain_size    FOREST  1 0
+ elseif TROPICAL_TILE
+  replace_terrain JUNGLE MOSS_ROAD
+  terrain_size    JUNGLE  1 0
+ elseif SNOW_TILE
+  replace_terrain SNOW_FOREST MOSS_ROAD
+  terrain_size    SNOW_FOREST  1  0
+ elseif DESERT_TILE
+  replace_terrain PALM_DESERT MOSS_ROAD
+  terrain_size    PALM_DESERT  1  0
+ endif
+ if SNOW_TILE
+  replace_terrain WATER         ICE
+  replace_terrain MED_WATER     ICE
+  replace_terrain DEEP_WATER    ICE
+ else
+  replace_terrain WATER         SHALLOW
+  replace_terrain MED_WATER     SHALLOW
+  replace_terrain DEEP_WATER    SHALLOW
+ endif
+ terrain_cost WATER       7
+ terrain_cost MED_WATER   9
+ terrain_cost DEEP_WATER 15
+ if NARROW_CONNECTIONS
+  terrain_size WATER 3 1
+  terrain_size MED_WATER 3 1
+  terrain_size DEEP_WATER 3 1
+ elseif MEDIUM_CONNECTIONS
+  terrain_size WATER 5 2
+  terrain_size MED_WATER 5 2
+  terrain_size DEEP_WATER 5 2
+ elseif WIDE_CONNECTIONS
+  terrain_size WATER 8 3
+  terrain_size MED_WATER 8 3
+  terrain_size DEEP_WATER 8 3
+ endif
+ }
+else
+ if FOREST_MAP
+  <CONNECTION_GENERATION>
+  if ALL_PLAYERS_CONNECTIONS
+   create_connect_all_players_land
+  else
+   create_connect_all_lands
+  endif  
+  { 
+  if GRASS_TILE
+   replace_terrain FOREST MOSS_ROAD
+   terrain_size    FOREST  1 0
+  elseif TROPICAL_TILE
+   replace_terrain JUNGLE MOSS_ROAD
+   terrain_size    JUNGLE  1 0
+  elseif SNOW_TILE
+   replace_terrain SNOW_FOREST MOSS_ROAD
+   terrain_size    SNOW_FOREST  1  0
+  elseif DESERT_TILE
+   replace_terrain PALM_DESERT MOSS_ROAD
+   terrain_size    PALM_DESERT  1  0
+  endif
+  }
+ else
+  <CONNECTION_GENERATION>
+  if ALL_CONNECTIONS
+   create_connect_all_lands
+  elseif TEAM_CONNECTIONS
+   create_connect_teams_lands
+  elseif ALL_PLAYERS_CONNECTIONS
+   create_connect_all_players_land
+  endif
+  {
+  if SNOW_TILE
+   replace_terrain WATER         ICE
+   replace_terrain MED_WATER     ICE
+   replace_terrain DEEP_WATER    ICE
+  else
+   replace_terrain WATER         SHALLOW
+   replace_terrain MED_WATER     SHALLOW
+   replace_terrain DEEP_WATER    SHALLOW
+  endif
+  terrain_cost WATER 7
+  terrain_cost MED_WATER 9
+  terrain_cost DEEP_WATER 15
+  if NARROW_CONNECTIONS
+   terrain_size WATER 2 1
+   terrain_size MED_WATER 2 1
+   terrain_size DEEP_WATER 2 1
+  elseif MEDIUM_CONNECTIONS
+   terrain_size WATER 4 1
+   terrain_size MED_WATER 4 1
+   terrain_size DEEP_WATER 4 1
+  elseif WIDE_CONNECTIONS
+   terrain_size WATER 6 2
+   terrain_size MED_WATER 6 2
+   terrain_size DEEP_WATER 6 2
+  endif
+  }
+ endif
+endif

@@ -74,6 +74,8 @@ class Parser {
     this.lands = []
     this.activeLands = []
     this.objects = []
+    this.connections = []
+    this.elevations = []
     this.cliffs = {}
   }
 
@@ -89,9 +91,31 @@ class Parser {
     this.index = 0
     this.line = 0
     this.column = 0
+    this.runParseLoop()
+  }
+
+  runParseLoop () {
     while (this.readNextToken()) {
       if (this.currentToken) this.parseToken()
     }
+  }
+
+  include (file) {
+    this.parseState.push({
+      code: this.code,
+      index: this.index,
+      line: this.line,
+      column: this.column
+    })
+    if (!this.options.include) {
+      throw new Error('#include is not supported')
+    }
+    this.options.include(file, (err, code) => {
+      if (err) throw err
+      this.write(code)
+      Object.assign(this, this.parseState.pop())
+      this.runParseLoop()
+    })
   }
 
   readNextToken () {
@@ -443,6 +467,7 @@ class Parser {
         break
     }
   }
+
   parseObjectsGeneration (token, args) {
     const { id } = token
 
@@ -455,6 +480,7 @@ class Parser {
           groupVariance: 0,
           amount: 1,
           groupPlacementRadius: 3,
+          grouping: 0,
           playerId: -1,
           landId: -1,
           minDistanceToPlayers: -1,
@@ -483,8 +509,10 @@ class Parser {
         object.groupPlacementRadius = args[0]
         break
       case 0x36: // set_loose_grouping
+        object.grouping = 1
         break
       case 0x37: // set_tight_grouping
+        object.grouping = 2
         break
       case 0x38: // terrain_to_place_on
         object.baseTerrain = args[0].value
@@ -513,11 +541,53 @@ class Parser {
         break
     }
   }
-  parseConnectionGeneration (token, args) {
-  
-  }
-  parseElevationGeneration (token, args) {
 
+  parseConnectionGeneration (token, args) {
+     
+  }
+
+  parseElevationGeneration (token, args) {
+    const { id } = token
+    if (!this.insideBlock) {
+      if (id === 80) { // create_elevation
+        const [ height ] = args
+        this.activeElevations = []
+        for (let h = 0; h < height; h += 1) {
+          const elevation = {
+            numberOfTiles: 0,
+            height: h > 7 ? 7 : h,
+            numberOfClumps: 1,
+            // Not sure … this is(?) what src does but it seems strange
+            spacing: h === 0 ? 2 : 1,
+            height2: h
+          }
+          this.elevations.push(elevation)
+          this.activeElevations.push(elevation)
+        }
+      }
+      return
+    }
+
+    this.activeElevations.forEach((elevation) => {
+      switch (id) {
+        case 0x53: // spacing
+          elevation.spacing = args[0]
+          break
+        case 0x13: // base_terrain
+          elevation.baseTerrain = args[0].value
+          break
+        case 0x2D: // number_of_clumps
+          elevation.numberOfClumps = args[0]
+          break
+        case 0x4A: // number_of_tiles
+          elevation.numberOfTiles = args[0]
+          break
+        case 0x4B: // set_scale_by_groups
+          break
+        case 0x4C: // set_scale_by_size
+          break
+      }
+    })
   }
 
   readNextWord () {

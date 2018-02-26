@@ -559,7 +559,7 @@ class Parser {
             numberOfClumps: 1,
             // Not sure … this is(?) what src does but it seems strange
             spacing: h === 0 ? 2 : 1,
-            height2: h
+            baseElevation: h
           }
           this.elevations.push(elevation)
           this.activeElevations.push(elevation)

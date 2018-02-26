@@ -5,7 +5,7 @@ class CliffGenerator extends Module {
     super(map, parent, true)
     this.cliffs = cliffs
 
-    this.priority = 1.75
+    this.schedule = 1.75
   }
 
   generate () {

@@ -5,7 +5,7 @@ class ConnectionGenerator extends Module {
     super(map, parent, true)
     this.connections = connections
 
-    this.priority = 2.1
+    this.schedule = 2.1
   }
 
   generate () {

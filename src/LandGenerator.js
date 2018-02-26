@@ -5,7 +5,7 @@ class LandGenerator extends Module {
     super(map, parent, true)
     this.data = data
 
-    this.priority = 1.0
+    this.schedule = 1.0
   }
 
   generate () {

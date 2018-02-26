@@ -1,3 +1,5 @@
+const ZoneMapList = require('./ZoneMapList')
+
 class Tile {
   constructor (terrain, elevation) {
     this.terrain = terrain
@@ -28,6 +30,8 @@ class Map {
       }
       this.terrain.push(row)
     }
+
+    this.mapZones = new ZoneMapList(this)
   }
 
   get ({ x, y }) {

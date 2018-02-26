@@ -2,7 +2,7 @@ const Struct = require('awestruct')
 const ScriptController = require('./Controller')
 const t = Struct.types
 
-const localFileHeader = Struct({
+const localFileHeader = Struct([
   ['signature', t.uint32],
   ['version', t.uint16],
   ['flag', t.uint16],
@@ -16,9 +16,9 @@ const localFileHeader = Struct({
   ['extraLength', t.uint16],
   ['name', t.string('nameLength')],
   ['extra', t.buffer('extraLength')]
-})
+])
 
-const directoryHeader = Struct({
+const directoryHeader = Struct([
   ['signature', t.uint32],
   ['version', t.uint16],
   ['flag', t.uint16],
@@ -38,9 +38,9 @@ const directoryHeader = Struct({
   ['name', t.string('nameLength')],
   ['extra', t.buffer('extraLength')],
   ['comment', t.string('commentLength')]
-})
+])
 
-const endOfDirectory = Struct({
+const endOfDirectory = Struct([
   ['signature', t.uint32],
   ['diskNumber', t.uint16],
   ['centralDirectoryDisk', t.uint16],
@@ -50,7 +50,7 @@ const endOfDirectory = Struct({
   ['centralDirectoryOffset', t.uint32],
   ['commentLength', t.uint16],
   ['comment', t.string('commentLength')]
-})
+])
 
 class ZipRMS {
   constructor (buffer) {

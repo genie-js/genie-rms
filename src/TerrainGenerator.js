@@ -6,7 +6,7 @@ class TerrainGenerator extends Module {
     this.terrains = terrains
     this.random = parent.random
 
-    this.priority = 2.0
+    this.schedule = 2.0
   }
 
   generate () {

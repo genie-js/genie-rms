@@ -15,7 +15,7 @@ const randomMapDef = fs.readFileSync(path.join(__dirname, 'random_map.def'), 'ut
 
 class ScriptController extends Module {
   constructor (source) {
-    super(null, null)
+    super(null, null, false)
     this.source = source
     this.random = new CRandom(Date.now())
 
@@ -27,33 +27,36 @@ class ScriptController extends Module {
     this.parser = new Parser({
       random: this.random
     })
+
+    this.createSharedResources()
+
     this.parser.write(randomMapDef)
     this.parser.write(this.source)
 
     /*
     if (this.parser.elevation) {
-      this.addChild(new ElevationGenerator(this.map, this, this.parser.elevation))
+      this.addModule(new ElevationGenerator(this.map, this, this.parser.elevation))
     }
     if (this.parser.connections.length > 0) {
-      this.addChild(new ConnectionGenerator(this.map, this, this.parser.connections))
+      this.addModule(new ConnectionGenerator(this.map, this, this.parser.connections))
     }
     */
     if (this.parser.terrains.length > 0) {
-      this.addChild(new TerrainGenerator(this.map, this, this.parser.terrains))
+      this.addModule(new TerrainGenerator(this.map, this, this.parser.terrains))
     }
     if (this.parser.objects.length > 0) {
-      this.addChild(new ObjectsGenerator(this.map, this, this.world, this.parser.objects))
+      this.addModule(new ObjectsGenerator(this.map, this, this.world, this.parser.objects))
     }
     /*
     if (this.parser.cliffs) {
-      this.addChild(new CliffGenerator(this.map, this, this.parser.cliffs))
+      this.addModule(new CliffGenerator(this.map, this, this.parser.cliffs))
     }
     if (this.parser.lands.length > 0) {
-      this.addChild(new LandGenerator(this.map, this, this.parser.lands))
+      this.addModule(new LandGenerator(this.map, this, this.parser.lands))
     }
     */
 
-    this.runChildGenerators()
+    super.generate()
   }
 }
 

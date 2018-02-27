@@ -35,19 +35,18 @@ class ObjectsGenerator extends Module {
   generateObjects (desc) {
     let {
       scalingType,
-      numberOfGroups,
       landId
     } = desc
 
     if (scalingType === 1) {
       // Scaling to map size
-      numberOfGroups *= this.map.sizeX * this.map.sizeY / 10000
+      desc.numberOfGroups *= this.map.sizeX * this.map.sizeY / 10000
     } else if (scalingType === 2) {
       // Scaling to player number
-      numberOfGroups *= this.world.numPlayers
+      desc.numberOfGroups *= this.world.numPlayers
     }
-    if (numberOfGroups < 1) {
-      numberOfGroups = 1
+    if (desc.numberOfGroups < 1) {
+      desc.numberOfGroups = 1
     }
 
     console.log('generateObject', desc.type)
@@ -96,7 +95,11 @@ class ObjectsGenerator extends Module {
           this.placeTightGroup(desc, tile)
         }
       } else {
-        this.map.place(tile, desc.type) // TODO use the `position` instead
+        // TODO use the `position` instead
+        this.map.place(tile, {
+          type: desc.type,
+          playerId: desc.playerId
+        })
       }
 
       placedGroups += 1
@@ -146,40 +149,6 @@ class ObjectsGenerator extends Module {
     // RGE_RMM_Objects_Generator__place_object
   }
 
-  sub_53C260 (desc) {
-    if (desc.scalingType === 1) {
-      const mapSize = this.map.sizeX * this.map.sizeY
-      desc.numberOfGroups *= mapSize / 10000
-      if (desc.numberOfGroups < 1) {
-        desc.numberOfGroups = 1
-      }
-    } else if (desc.scalingType === 2) {
-      const numPlayers = 8
-      desc.numberOfGroups *= numPlayers - 1
-      if (desc.numberOfGroups < 1) {
-        desc.numberOfGroups = 1
-      }
-    }
-
-    if (desc.landId < 0) {
-      if (desc.landId === -1) {
-        this.sub_53C9D0(this, desc)
-      } else if (desc.landId === -2) {
-        this.sub_53C720(this, desc, desc.minDistanceToPlayers)
-      }
-    } else {
-      // Explicitly placed objects.
-      for (let i = 0; i < this.placedObjects.length; i++) {
-        const object = this.placedObjects[i]
-        // This reuses the land ID in src.
-        if (object.id === desc.landId) {
-          const position = { x: object.x, y: object.y }
-          this.placePlayerObject(this, desc, position, desc.minDistanceToPlayers, desc.maxDistanceToPlayers, i)
-        }
-      }
-    }
-  }
-
   placeLooseGroup (desc, position) {
     const stack = this.generatePositions(position, 0, desc.groupPlacementRadius)
 
@@ -191,7 +160,10 @@ class ObjectsGenerator extends Module {
         continue
       }
 
-      this.map.place(next, desc.type)
+      this.map.place(next, {
+        type: desc.type,
+        player: desc.playerId
+      })
       toPlace--
     }
   }
@@ -210,7 +182,10 @@ class ObjectsGenerator extends Module {
       if (next.y > 0) stack.add(next.x, next.y - 1, 0, this.random.next())
       if (next.y < this.map.sizeY - 1) stack.add(next.x, next.y + 1, 0, this.random.next())
 
-      this.map.place(next, desc.type)
+      this.map.place(next, {
+        type: desc.type,
+        player: desc.playerId
+      })
       toPlace--
     }
   }

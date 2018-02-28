@@ -32,6 +32,7 @@ class ScriptController extends Module {
 
     this.parser.write(randomMapDef)
     this.parser.write(this.source)
+    this.parser.end()
 
     /*
     if (this.parser.elevation) {

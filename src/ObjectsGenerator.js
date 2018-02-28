@@ -130,8 +130,8 @@ class ObjectsGenerator extends Module {
 
     let toGo = diffX * diffY / 4
     while (toGo--) {
-      const x = minX + this.random.nextRange(diffX)
-      const y = minY + this.random.nextRange(diffY)
+      const x = minX + this.random.nextRange(diffX - 1)
+      const y = minY + this.random.nextRange(diffY - 1)
 
       if (!this.searchMapRows[y]) console.log({ x, y })
       if (this.searchMapRows[y][x]) {

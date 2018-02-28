@@ -94,6 +94,14 @@ class Parser {
     this.runParseLoop()
   }
 
+  end () {
+    for (const terrain of this.terrains) {
+      if (terrain.tiles < 0) {
+        terrain.tiles = (-terrain.tiles / 100) * (this.options.size ** 2)
+      }
+    }
+  }
+
   runParseLoop () {
     while (this.readNextToken()) {
       if (this.currentToken) this.parseToken()
@@ -543,7 +551,46 @@ class Parser {
   }
 
   parseConnectionGeneration (token, args) {
-     
+    const { id } = token
+
+    if (!this.insideBlock) {
+      if (id < 63 || id > 66) {
+        return
+      }
+      const terrains = []
+      for (let i = 0; i < 99; i += 1) {
+        terrains.push({
+          terrainCost: 1,
+          terrainSize: 1,
+          terrainVariation: 0,
+          replaceTerrain: -1
+        })
+      }
+      this.connections.push({
+        terrains,
+        type: id
+      })
+    }
+
+    const connection = this.connections[this.connections.length - 1]
+
+    switch (id) {
+      case 0x52: // default_terrain_placement
+        for (const terrain of connection.terrains) {
+          terrain.replaceTerrain = args[0]
+        }
+        break
+      case 0x53: // replace_terrain
+        connection.terrains[args[0]].replaceTerrain = args[1]
+        break
+      case 0x54: // terrain_cost
+        connection.terrains[args[0]].terrainCost = args[1]
+        break
+      case 0x55: // terrain_size
+        connection.terrains[args[0]].terrainSize = args[1]
+        connection.terrains[args[0]].terrainVariation = args[2]
+        break
+    }
   }
 
   parseElevationGeneration (token, args) {
@@ -555,7 +602,7 @@ class Parser {
         for (let h = 0; h < height; h += 1) {
           const elevation = {
             numberOfTiles: 0,
-            height: h > 7 ? 7 : h,
+            height: Math.min(h, 7),
             numberOfClumps: 1,
             // Not sure … this is(?) what src does but it seems strange
             spacing: h === 0 ? 2 : 1,
@@ -568,7 +615,7 @@ class Parser {
       return
     }
 
-    this.activeElevations.forEach((elevation) => {
+    for (const elevation of this.activeElevations) {
       switch (id) {
         case 0x53: // spacing
           elevation.spacing = args[0]
@@ -583,19 +630,23 @@ class Parser {
           elevation.numberOfTiles = args[0]
           break
         case 0x4B: // set_scale_by_groups
+          elevation.scalingMode = 1
           break
         case 0x4C: // set_scale_by_size
+          elevation.scalingMode = 2
+          break
+        case 0x4D: // set_avoid_player_start_areas
           break
       }
-    })
+    }
   }
 
   readNextWord () {
     const match = this.code.slice(this.index).match(/^(\S+)(\s+)/)
     if (!match) return null
     const word = match[1]
-    this.start = this.index
-    this.end = this.start + word.length
+    this.startIndex = this.index
+    this.endIndex = this.startIndex + word.length
     this.index += match[0].length
     const lines = countLines(match[0])
     if (lines > 0) {

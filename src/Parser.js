@@ -77,6 +77,8 @@ class Parser {
     this.connections = []
     this.elevations = []
     this.cliffs = {}
+
+    this.terrainScalingType = new Map()
   }
 
   defineToken (name, id, type, argTypes) {
@@ -96,8 +98,19 @@ class Parser {
 
   end () {
     for (const terrain of this.terrains) {
+      const scalingType = this.terrainScalingType.get(terrain)
+      if (scalingType === 1) { // scale_by_size
+        if (terrain.tiles > 0) {
+          terrain.tiles *= (this.options.size ** 2) / 10000
+        }
+      } else if (scalingType === 2) { // scale_by_groups
+        terrain.numberOfClumps *= (this.options.size ** 2) / 10000
+      } else if (terrain.tiles > 0) {
+        terrain.tiles *= (this.options.size ** 2) / 10000
+      }
+
       if (terrain.tiles < 0) {
-        terrain.tiles = (-terrain.tiles / 100) * (this.options.size ** 2)
+        terrain.tiles = -(terrain.tiles / 100) * (this.options.size ** 2)
       }
     }
   }
@@ -463,8 +476,10 @@ class Parser {
         terrain.avoidPlayerStartAreas = true
         break
       case 0x4B: // set_scale_by_groups
+        this.terrainScalingType.set(terrain, 1)
         break
       case 0x4C: // set_scale_by_size
+        this.terrainScalingType.set(terrain, 2)
         break
       case 0x58: // height_limits
         terrain.minHeight = args[0]

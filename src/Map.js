@@ -1,4 +1,5 @@
 const ZoneMapList = require('./ZoneMapList')
+const pngjs = require('pngjs')
 
 class Tile {
   constructor (terrain, elevation) {
@@ -10,7 +11,6 @@ class Tile {
 
   place (object) {
     if (this.object) {
-      return
       throw new Error('Cannot place multiple objects on one tile')
     }
     this.object = object
@@ -50,8 +50,8 @@ class Map {
         const tile = this.get({ x, y })
 
         let color = require('./terrainColors')[tile.terrain]
-        if (tile.object && require('./unitColors')[tile.object]) {
-          color = require('./unitColors')[tile.object]
+        if (tile.object && require('./unitColors')[tile.object.type]) {
+          color = require('./unitColors')[tile.object.type]
         }
 
         color = color
@@ -67,13 +67,23 @@ class Map {
       }
     }
 
-    const png = new (require('pngjs').PNG)({
-      width: this.sizeX,
-      height: this.sizeY
-    })
-    png.data = Buffer.from(imageData)
+    if (pngjs) {
+      const png = new pngjs.PNG({
+        width: this.sizeX,
+        height: this.sizeY
+      })
+      png.data = Buffer.from(imageData)
 
-    return png.pack()
+      return png.pack()
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = this.sizeX
+    canvas.height = this.sizeY
+
+    canvas.getContext('2d').putImageData(new ImageData(imageData, this.sizeX, this.sizeY), 0, 0)
+
+    return canvas
   }
 }
 

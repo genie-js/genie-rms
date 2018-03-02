@@ -39,6 +39,8 @@ class TerrainGenerator extends Module {
         }
       }
     }
+
+    this.checkBorders()
   }
 
   generateTerrain (desc) {
@@ -66,7 +68,7 @@ class TerrainGenerator extends Module {
       const tile = this.map.get(next)
       const { x, y } = next
       if (tile.terrain === desc.baseTerrain) {
-        if (this.canPlaceTerrainOn(x, y, desc)) {
+        if (this.canPlaceTerrainOn(x, y, desc) !== 0) {
           if (!desc.avoidPlayerStartAreas || !this.searchMapRows[y][x]) {
             tile.terrain = desc.type
             const clump = clumps[clumpIndex]
@@ -91,7 +93,7 @@ class TerrainGenerator extends Module {
         // TODO numeric preference
         const preference = this.canPlaceTerrainOn(x, y, desc)
         const tile = this.map.get(next)
-        if (tile.terrain === desc.baseTerrain && preference) {
+        if (tile.terrain === desc.baseTerrain && preference !== 0) {
           let cost = figChance(preference, x, y, desc.clumpingFactor)
           if (desc.avoidPlayerStartAreas) {
             cost += this.searchMapRows[y][x]
@@ -128,13 +130,88 @@ class TerrainGenerator extends Module {
     }
   }
 
-  canPlaceTerrainOn (x, y, desc) {
-    const tile = this.map.get({ x, y })
-    if (tile.elevation < desc.minHeight || tile.elevation > desc.maxHeight) {
+  checkBorders () {
+    const { map } = this
+
+    for (let y = 0; y < map.sizeY; y++) {
+      for (let x = 0; x < map.sizeX; x++) {
+        const tile = map.get({ x, y })
+        if (isIce(tile.terrain) && isBorderedByWater(x, y)) {
+          tile.terrain = 37 // Ice Beach
+        } else if (tile.terrain !== 2) { // Beach
+          if (isSnow(tile.terrain) && isBorderedByWater(x, y)) {
+            tile.terrain = 37 // Ice Beach
+          } else if (!isWaterTile(x, y) && isBorderedByWater(x, y)) {
+            tile.terrain = 2 // Beach
+          }
+        }
+      }
+    }
+
+    function isBorderedByWater (x, y) {
+      if (y > 0 && isWaterTile(x, y - 1) ||
+          y < map.sizeY - 1 && isWaterTile(x, y + 1)) {
+        return true
+      }
+      if (x > 0 && (
+            isWaterTile(x - 1, y) ||
+            y > 0 && isWaterTile(x - 1, y - 1) ||
+            y < map.sizeY - 1 && isWaterTile(x - 1, y + 1))) {
+        return true
+      }
+      if (x < map.sizeX - 1 && (
+            isWaterTile(x + 1, y) ||
+            y > 0 && isWaterTile(x + 1, y - 1) ||
+            y < map.sizeY - 1 && isWaterTile(x + 1, y + 1))) {
+        return true
+      }
       return false
     }
 
-    return true
+    function isWaterTile (x, y) {
+      const { terrain } = map.get({ x, y })
+      return isWater(terrain)
+    }
+  }
+
+  canPlaceTerrainOn (x, y, desc) {
+    const tile = this.map.get({ x, y })
+    if (tile.elevation < desc.minHeight || tile.elevation > desc.maxHeight) {
+      return 0
+    }
+
+    if (desc.spacingToOtherTerrainTypes > 0) {
+      const minX = Math.max(0, x - desc.spacingToOtherTerrainTypes)
+      const minY = Math.max(0, y - desc.spacingToOtherTerrainTypes)
+      const maxX = Math.min(this.map.sizeX - 1, x + desc.spacingToOtherTerrainTypes)
+      const maxY = Math.min(this.map.sizeY - 1, y + desc.spacingToOtherTerrainTypes)
+
+      for (let cy = minY; cy < maxY; cy += 1) {
+        for (let cx = minX; cx < maxX; cx += 1) {
+          const tile = this.map.get({ x: cx, y: cy })
+          if (tile.terrain !== desc.baseTerrain && tile.terrain !== desc.type) {
+            return 0
+          }
+          if (desc.flatOnly && tile.type !== 0) {
+            return 0
+          }
+        }
+      }
+    }
+
+    const minX = Math.max(0, x - 2)
+    const minY = Math.max(0, y - 2)
+    const maxX = Math.min(0, x + 2)
+    const maxY = Math.min(0, y + 2)
+    let score = 1
+    for (let cy = minY; cy < maxY; cy += 1) {
+      for (let cx = minX; cx < maxX; cx += 1) {
+        const tile = this.map.get({ x: cx, y: cy })
+        if (tile.terrain === desc.type) score += 1
+      }
+    }
+
+    return score
   }
 
   linkStackRandomly () {
@@ -159,4 +236,16 @@ module.exports = TerrainGenerator
 
 function figChance (preference, x, y, clumping) {
   return 250 - clumping * preference
+}
+
+function isWater (terrain) {
+  return terrain === 1 || terrain === 4 || terrain === 22 || terrain === 23
+}
+
+function isIce (terrain) {
+  return terrain === 26 || terrain === 35 || terrain === 37
+}
+
+function isSnow (terrain) {
+  return terrain === 32 || terrain === 33 || terrain === 34
 }

@@ -3,6 +3,7 @@ const pngjs = require('pngjs')
 
 class Tile {
   constructor (terrain, elevation) {
+    this.type = 0 // Probably slope?
     this.terrain = terrain
     this.elevation = elevation
 

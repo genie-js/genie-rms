@@ -25,8 +25,9 @@ class Module {
     this.modules.sort(by('schedule'))
 
     for (const child of this.modules) {
-      console.log(child.constructor.name)
+      console.time(child.constructor.name)
       child.generate()
+      console.timeEnd(child.constructor.name)
     }
   }
 

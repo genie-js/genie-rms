@@ -9,10 +9,11 @@ function toObjectPosition (tile) {
 }
 
 class ObjectsGenerator extends Module {
-  constructor (map, parent, world, objects) {
+  constructor (map, parent, world, objects, hotspots) {
     super(map, parent, true)
     this.world = world
     this.objects = objects
+    this.hotspots = hotspots
 
     this.placedObjects = []
     this.nextObjectId = 0
@@ -40,7 +41,7 @@ class ObjectsGenerator extends Module {
 
     if (scalingType === 1) {
       // Scaling to map size
-      desc.numberOfGroups *= this.map.sizeX * this.map.sizeY / 10000
+      desc.numberOfGroups = this.map.sizeX * this.map.sizeY / 10000
     } else if (scalingType === 2) {
       // Scaling to player number
       desc.numberOfGroups *= this.world.numPlayers
@@ -48,20 +49,26 @@ class ObjectsGenerator extends Module {
     if (desc.numberOfGroups < 1) {
       desc.numberOfGroups = 1
     }
+    desc.numberOfGroups = Math.floor(desc.numberOfGroups)
 
-    console.log('generateObject', desc.type)
+    console.log('generateObject', desc.type, landId)
     if (landId < 0) {
       if (landId === -1) {
-        this.placeObjectsAnywhere(desc)
+        this.placeObjects(desc)
       } else if (landId === -2) {
-        this.placeObjectsAvoidingPlayers(desc, desc.minDistanceToPlayers)
+        this.placeAvoidObjects(desc, desc.minDistanceToPlayers)
       }
     } else {
-      const tiles = this.generatePositions()
+      for (let i = 0; i < this.hotspots.length; i += 1) {
+        const land = this.hotspots[i]
+        if (land.id === landId) {
+          this.placeLandObjects(desc, land.x, land.y, desc.minDistanceToPlayers, desc.maxDistanceToPlayers, i)
+        }
+      }
     }
   }
 
-  placeObjectsAnywhere (desc) {
+  placeObjects (desc) {
     const {
       numberOfGroups,
       maxDistanceToOtherZones,
@@ -77,7 +84,7 @@ class ObjectsGenerator extends Module {
     let placedGroups = 0
     let tile
     while ((tile = positions.pop()) && placedGroups < numberOfGroups) {
-      if (!this._checkRestrictions(tile, maxDistanceToOtherZones, maxDistanceToOtherZones * 10 / 14)) {
+      if (!this._checkRestrictions(tile, maxDistanceToOtherZones, Math.floor(maxDistanceToOtherZones * 10 / 14))) {
         continue
       }
       if (desc.baseTerrain !== -1 && this.map.get(tile).terrain !== desc.baseTerrain) {
@@ -88,11 +95,11 @@ class ObjectsGenerator extends Module {
       positions = this.avoidPosition(positions, tile, desc.minDistanceGroupPlacement)
       positions = this.avoidPosition(positions, tile, desc.maxDistanceGroupPlacement)
 
-      if (desc.grouping !== 0) {
-        if (desc.grouping === 1) {
-          this.placeLooseGroup(desc, tile)
+      if (desc.groupingType !== 0) {
+        if (desc.groupingType === 1) {
+          this.placeLooseGroup(desc, tile, desc.playerId)
         } else {
-          this.placeTightGroup(desc, tile)
+          this.placeTightGroup(desc, tile, desc.playerId)
         }
       } else {
         // TODO use the `position` instead
@@ -106,7 +113,76 @@ class ObjectsGenerator extends Module {
     }
   }
 
+  placeAvoidObjects (desc, distance) {
+  }
+
+  placeLandObjects (desc, x, y, minDistanceToPlayers, maxDistanceToPlayers, i) {
+    const { maxDistanceToOtherZones } = desc
+    const playerId = desc.playerId !== -1
+      ? desc.playerId
+      : this.hotspots[i].playerId > 0
+        ? this.hotspots[i].playerId
+        : 0
+
+    console.log('placeLandObjects', playerId)
+
+    // TODO Change to scout if necessary
+
+    const terrainRules = Array(42).fill(1)
+    this.zoneMap = this.map.mapZones.getZoneMap(terrainRules)
+
+    let positions = this.generatePositions({ x, y }, minDistanceToPlayers, maxDistanceToPlayers)
+
+    let groupsLeft = desc.numberOfGroups
+    if (desc.type === 83 && groupsLeft === 1) {
+      groupsLeft = 3 // TODO civ specific
+    }
+
+    const coreZone = this.zoneMap.getZoneInfo(x, y)
+    let next
+    while (groupsLeft > 0 && (next = positions.pop())) {
+      if (this._tooClose(desc, next.x, next.y)) {
+        continue
+      }
+      if (this.zoneMap.getZoneInfo(next.x, next.y) !== coreZone) {
+        continue
+      }
+      if (!this._checkRestrictions(next, maxDistanceToOtherZones, Math.floor(maxDistanceToOtherZones * 10 / 14))) {
+        continue
+      }
+      if (desc.baseTerrain !== -1 && this.map.get(next).terrain !== desc.baseTerrain) {
+        continue
+      }
+
+      if (false) {
+        this.map.place(next, {
+          type: desc.type,
+          player: playerId
+        })
+      } else {
+        positions = this.avoidPosition(positions, next, desc.minDistanceGroupPlacement)
+        positions = this.avoidPosition(positions, next, desc.maxDistanceGroupPlacement)
+
+        if (desc.groupingType === 0) {
+          this.map.place(next, {
+            type: desc.type,
+            playerId: playerId
+          })
+        } else if (desc.groupingType === 1) {
+          this.placeLooseGroup(desc, next, playerId)
+        } else {
+          this.placeTightGroup(desc, next, playerId)
+        }
+
+        this._unavoidPosition(next, desc.minDistanceGroupPlacement, 0, desc.type)
+        groupsLeft--
+      }
+    }
+    // TODO Change back if necessary
+  }
+
   generatePositions (position, minDistance, maxDistance) {
+    console.log('generating', position, minDistance, maxDistance)
     // TODO Correct implementation with min and max distance
     const stack = new MapStack()
     const size = this.map.sizeX * this.map.sizeY
@@ -121,8 +197,7 @@ class ObjectsGenerator extends Module {
 
     for (let y = minY; y < maxY; y++) {
       for (let x = minX; x < maxX; x++) {
-        if (!this.searchMapRows[y]) console.log({ x, y })
-        if (this.searchMapRows[y][x]) {
+        if (this.searchMapRows[y][x] !== 0) {
           stack.push(this.nodes[y][x])
         }
       }
@@ -133,13 +208,11 @@ class ObjectsGenerator extends Module {
       const x = minX + this.random.nextRange(diffX - 1)
       const y = minY + this.random.nextRange(diffY - 1)
 
-      if (!this.searchMapRows[y]) console.log({ x, y })
-      if (this.searchMapRows[y][x]) {
+      if (this.searchMapRows[y][x] !== 0) {
         stack.push(this.nodes[y][x])
       }
     }
 
-    stack.sort()
     console.log('generated', stack.length)
     return stack
   }
@@ -149,7 +222,7 @@ class ObjectsGenerator extends Module {
     // RGE_RMM_Objects_Generator__place_object
   }
 
-  placeLooseGroup (desc, position) {
+  placeLooseGroup (desc, position, playerId) {
     const stack = this.generatePositions(position, 0, desc.groupPlacementRadius)
 
     let toPlace = Math.max(1, (Math.random() * desc.groupVariance * 2) + desc.amount - desc.groupVariance)
@@ -162,13 +235,13 @@ class ObjectsGenerator extends Module {
 
       this.map.place(next, {
         type: desc.type,
-        player: desc.playerId
+        player: playerId
       })
       toPlace--
     }
   }
 
-  placeTightGroup (desc, { x, y }) {
+  placeTightGroup (desc, { x, y }, playerId) {
     const stack = new MapStack()
     stack.add(this.nodes[y][x])
 
@@ -184,7 +257,7 @@ class ObjectsGenerator extends Module {
 
       this.map.place(next, {
         type: desc.type,
-        player: desc.playerId
+        player: playerId
       })
       toPlace--
     }
@@ -203,6 +276,29 @@ class ObjectsGenerator extends Module {
   _unavoidPosition ({ x, y }, minDistance, canPlaceHere, type) {
     // In area with radius minDistance around center [x, y],
     // If restrictions for unit `type` on tile [x, y] > 0, set searchMapRows[y][x] = canPlaceHere
+
+    const minX = Math.max(0, x - minDistance)
+    const minY = Math.max(0, y - minDistance)
+    const maxX = Math.min(this.map.sizeX - 1, x + minDistance)
+    const maxY = Math.min(this.map.sizeY - 1, y + minDistance)
+
+    for (let cy = minY; cy < maxY; cy += 1) {
+      for (let cx = minX; cx < maxX; cx += 1) {
+        this.searchMapRows[cy][cx] = canPlaceHere
+      }
+    }
+  }
+
+  _tooClose (desc, x, y) {
+    if (desc.minDistanceToPlayers <= 0 || this.hotspots.length === 0) {
+      return false
+    }
+
+    return this.hotspots.some((hs) => {
+      const distX = Math.abs(hs.x - x)
+      const distY = Math.abs(hs.y - y)
+      return distX < desc.minDistanceToPlayers && distY < desc.minDistanceToPlayers
+    })
   }
 
   _checkRestrictions ({ x, y }, maxDistance, cornerDistance) {
@@ -223,6 +319,11 @@ class ObjectsGenerator extends Module {
   }
 
   _getRestriction (x, y) {
+    if (x < 0) x = 0
+    if (y < 0) y = 0
+    if (x >= this.map.sizeX) x = this.map.sizeX - 1
+    if (y >= this.map.sizeY) y = this.map.sizeY - 1
+
     return this.zoneMap.getZoneInfo(x, y)
   }
 }

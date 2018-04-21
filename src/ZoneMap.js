@@ -51,6 +51,7 @@ module.exports = class ZoneMap {
   }
 
   getZoneInfo (x, y) {
+    if (!this.zoneMapRows[y]) console.log('err', x, y)
     return this.zoneMapRows[y][x]
   }
 

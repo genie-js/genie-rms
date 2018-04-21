@@ -52,16 +52,18 @@ const IF_STATE_DONE = 3
 class Parser {
   constructor (options = {}) {
     this.options = Object.assign({
+      numPlayers: 2,
       size: 120,
-      random: null
+      random: null,
+      onWarn: (warning) => {}
     }, options)
 
     this.random = this.options.random || new CRandom(Date.now())
 
     this.tokenTypes = []
-    defaultTokens.forEach((token) => {
+    for (const token of defaultTokens) {
       this.defineToken(...token)
-    })
+    }
 
     this.commentDepth = 0
     // TODO also use a randomStack, like ifStack?
@@ -78,7 +80,18 @@ class Parser {
     this.elevations = []
     this.cliffs = {}
 
-    this.terrainScalingType = new Map()
+    this.terrainHotspots = []
+    this.objectHotspots = []
+    this.elevationHotspots = []
+    this.cliffHotspots = []
+  }
+
+  warn (str) {
+    const warning = new Error(str)
+    warning.index = this.index
+    warning.line = this.line
+    warning.column = this.column
+    this.options.onWarn(warning)
   }
 
   defineToken (name, id, type, argTypes) {
@@ -98,12 +111,11 @@ class Parser {
 
   end () {
     for (const terrain of this.terrains) {
-      const scalingType = this.terrainScalingType.get(terrain)
-      if (scalingType === 1) { // scale_by_size
+      if (terrain.scalingType === 1) { // scale_by_size
         if (terrain.tiles > 0) {
           terrain.tiles *= (this.options.size ** 2) / 10000
         }
-      } else if (scalingType === 2) { // scale_by_groups
+      } else if (terrain.scalingType === 2) { // scale_by_groups
         terrain.numberOfClumps *= (this.options.size ** 2) / 10000
       } else if (terrain.tiles > 0) {
         terrain.tiles *= (this.options.size ** 2) / 10000
@@ -112,6 +124,56 @@ class Parser {
       if (terrain.tiles < 0) {
         terrain.tiles = -(terrain.tiles / 100) * (this.options.size ** 2)
       }
+    }
+
+    // la la
+    const players = []
+    for (let i = 0; i < this.options.numPlayers; i += 1) {
+      players.push({
+        id: i,
+        x: Math.floor(Math.random() * this.options.size),
+        y: Math.floor(Math.random() * this.options.size)
+      })
+    }
+
+    /*
+    for (const land of this.lands) {
+      this.objectHotspots.push({
+        x: land.position.x,
+        y: land.position.y,
+      })
+      this.cliffHotspots.push({
+        x: land.position.x,
+        y: land.position.y,
+        radius: 15
+      })
+    }
+    */
+
+    for (const player of players) {
+      this.objectHotspots.push({
+        x: player.x,
+        y: player.y,
+        id: 1,
+        playerId: player.id
+      })
+      this.terrainHotspots.push({
+        x: player.x,
+        y: player.y,
+        radius: 13,
+        fade: 20
+      })
+      this.cliffHotspots.push({
+        x: player.x,
+        y: player.y,
+        radius: 15
+      })
+      this.elevationHotspots.push({
+        x: player.x,
+        y: player.y,
+        radius: 13,
+        fade: 20
+      })
     }
   }
 
@@ -147,6 +209,8 @@ class Parser {
     if (token) {
       this.currentToken = token
       return this.currentToken
+    } else if (this.commentDepth === 0) {
+      this.warn(`${word}, unrecognized command ignored.`)
     }
     return true
   }
@@ -336,22 +400,23 @@ class Parser {
         this.baseTerrain = args[0].value
         return
       }
+
       if (id === 20) { // create_player_lands
-        const landId = this.lands.push({
-          isPlayerLand: true
-        })
-        this.activeLands.push(landId - 1)
-        // TODO
+        this.activeLands = []
+        for (let i = 0; i < this.options.numPlayers; i += 1) {
+          const landId = this.createLand(i)
+          this.activeLands.push(landId)
+        }
+        return
       }
       if (id === 32) { // create_land
-        const landId = this.lands.push({
-          isPlayerLand: false
-        })
-        this.activeLands.push(landId - 1)
-        // TODO
+        const landId = this.createLand(0)
+        this.activeLands.push(landId)
+        return
       }
     }
-    this.activeLands.forEach((landId) => {
+
+    for (const landId of this.activeLands) {
       const land = this.lands[landId]
       switch (id) {
         case 71: // land_position
@@ -402,8 +467,39 @@ class Parser {
         case 22: // base_size
           land.baseSize = args[0]
           break
+        case 73: // clumping_factor
+          land.clumpingFactor = args[0]
+          break
+        case 86: // min_placement_distance
+          land.minPlacementDistance = args[0]
+          break
+        case 33: // assign_to_player
+          land.playerId = args[0]
       }
+    }
+  }
+
+  createLand (zone) {
+    this.lands.push({
+      tiles: this.options.size ** 2,
+      position: { x: -1, y: -1 },
+      baseSize: 3,
+      avoidance: 0,
+      zone: zone,
+      clumpingFactor: 8,
+      leftBorder: 0,
+      topBorder: 0,
+      rightBorder: this.options.size,
+      bottomBorder: this.options.size,
+      borderFuzziness: 20,
+      minPlacementDistance: -1,
+
+      // hotspot data
+      id: zone > 0 ? 1 : 0,
+      playerId: zone
     })
+
+    return this.lands.length - 1
   }
 
   parseCliffGeneration (token, args) {
@@ -431,15 +527,18 @@ class Parser {
       case 41: // min_terrain_distance
         cliffs.minDistanceToTerrain = args[0]
         break
+      default:
+        this.warn('Command is not valid in this frame of reference.')
     }
   }
+
   parseTerrainGeneration (token, args) {
     const { id } = token
     if (!this.insideBlock) {
       if (id === 43) { // create_terrain
         this.terrains.push({
+          tiles: this.options.size, // NOT squared, just the horizontal amount of tiles
           type: args[0].value,
-          tiles: 0,
           numberOfClumps: 1,
           spacingToOtherTerrainTypes: 0,
           baseTerrain: null,
@@ -447,11 +546,18 @@ class Parser {
           avoidPlayerStartAreas: false,
           minHeight: 0,
           maxHeight: 0,
-          flatOnly: false
+          flatOnly: false,
+          scalingType: 0
         })
         return
       }
     }
+
+    if (!this.terrains.length) {
+      this.warn('Must use a create command before braces.')
+      return
+    }
+
     const terrain = this.terrains[this.terrains.length - 1]
     switch (id) {
       case 19: // base_terrain
@@ -476,10 +582,10 @@ class Parser {
         terrain.avoidPlayerStartAreas = true
         break
       case 0x4B: // set_scale_by_groups
-        this.terrainScalingType.set(terrain, 1)
+        terrain.scalingType = 1
         break
       case 0x4C: // set_scale_by_size
-        this.terrainScalingType.set(terrain, 2)
+        terrain.scalingType = 2
         break
       case 0x58: // height_limits
         terrain.minHeight = args[0]
@@ -488,6 +594,8 @@ class Parser {
       case 0x59: // set_flat_terrain_only
         terrain.flatOnly = true
         break
+      default:
+        this.warn('Command is not valid in this frame of reference.')
     }
   }
 
@@ -499,31 +607,49 @@ class Parser {
         this.objects.push({
           type: args[0] ? args[0].value : 0,
           baseTerrain: -1,
-          numberOfGroups: 1,
-          groupVariance: 0,
+          groupingType: 0,
+          scalingType: 0,
           amount: 1,
+          groupVariance: 0,
+          numberOfGroups: 1,
           groupPlacementRadius: 3,
-          grouping: 0,
           playerId: -1,
           landId: -1,
           minDistanceToPlayers: -1,
           maxDistanceToPlayers: -1,
+          minDistanceGroupPlacement: 0,
           maxDistanceToOtherZones: 0
         })
       }
       return
     }
+
+    if (this.objects.length === 0) {
+      this.warn('Must use a create command before braces.')
+      return
+    }
+
     const object = this.objects[this.objects.length - 1]
     switch (id) {
       case 0x31: // set_scaling_to_map_size
+        object.scalingType = 1
         break
       case 0x57: // set_scaling_to_player_number
+        object.scalingType = 2
         break
       case 0x32: // number_of_groups
+        if (object.groupingType === 0) {
+          object.amount = object.numberOfGroups
+          object.groupingType = 1
+        }
         object.numberOfGroups = args[0]
         break
       case 0x33: // number_of_objects
-        object.amount = args[0]
+        if (object.groupingType !== 0) {
+          object.amount = args[0]
+        } else {
+          object.numberOfGroups = args[0]
+        }
         break
       case 0x34: // group_variance
         object.groupVariance = args[0]
@@ -532,10 +658,18 @@ class Parser {
         object.groupPlacementRadius = args[0]
         break
       case 0x36: // set_loose_grouping
-        object.grouping = 1
+        if (object.groupingType === 0) {
+          object.amount = object.numberOfGroups
+          object.numberOfGroups = 1
+        }
+        object.groupingType = 1
         break
       case 0x37: // set_tight_grouping
-        object.grouping = 2
+        if (object.groupingType === 0) {
+          object.amount = object.numberOfGroups
+          object.numberOfGroups = 1
+        }
+        object.groupingType = 2
         break
       case 0x38: // terrain_to_place_on
         object.baseTerrain = args[0].value
@@ -544,9 +678,10 @@ class Parser {
         object.playerId = 0
         break
       case 0x3A: // set_place_for_every_player
+        object.landId = 1
         break
       case 0x3B: // place_on_specific_land_id
-        object.landId = args[0]
+        object.landId = args[0] + 10
         break
       case 0x4E: // min_distance_group_placement
         object.minDistanceGroupPlacement = args[0]
@@ -554,14 +689,18 @@ class Parser {
       case 0x5D: // temp_min_distance_group_placement
         break
       case 0x3C: // min_distance_to_players
+        if (object.landId === -1) object.landId = -2
         object.minDistanceToPlayers = args[0]
         break
       case 0x3D: // max_distance_to_players
+        if (object.landId === -1) object.landId = -2
         object.maxDistanceToPlayers = args[0]
         break
       case 0x5B: // max_distance_to_other_zones
         object.maxDistanceToOtherZones = args[0]
         break
+      default:
+        this.warn('Command is not valid in this frame of reference.')
     }
   }
 
@@ -570,6 +709,7 @@ class Parser {
 
     if (!this.insideBlock) {
       if (id < 63 || id > 66) {
+        this.warn('Command is not valid in this frame of reference.')
         return
       }
       const terrains = []
@@ -585,6 +725,12 @@ class Parser {
         terrains,
         type: id
       })
+      return
+    }
+
+    if (this.connections.length === 0) {
+      this.warn('Must use a create command before braces.')
+      return
     }
 
     const connection = this.connections[this.connections.length - 1]
@@ -592,18 +738,18 @@ class Parser {
     switch (id) {
       case 0x52: // default_terrain_placement
         for (const terrain of connection.terrains) {
-          terrain.replaceTerrain = args[0]
+          terrain.replaceTerrain = args[0].value
         }
         break
       case 0x53: // replace_terrain
-        connection.terrains[args[0]].replaceTerrain = args[1]
+        connection.terrains[args[0].value].replaceTerrain = args[1]
         break
       case 0x54: // terrain_cost
-        connection.terrains[args[0]].terrainCost = args[1]
+        connection.terrains[args[0].value].terrainCost = args[1]
         break
       case 0x55: // terrain_size
-        connection.terrains[args[0]].terrainSize = args[1]
-        connection.terrains[args[0]].terrainVariation = args[2]
+        connection.terrains[args[0].value].terrainSize = args[1]
+        connection.terrains[args[0].value].terrainVariation = args[2]
         break
     }
   }
@@ -619,7 +765,7 @@ class Parser {
             numberOfTiles: 0,
             height: Math.min(h, 7),
             numberOfClumps: 1,
-            // Not sure … this is(?) what src does but it seems strange
+            // Base level has spacing:2 by default.
             spacing: h === 0 ? 2 : 1,
             baseElevation: h
           }
@@ -627,6 +773,11 @@ class Parser {
           this.activeElevations.push(elevation)
         }
       }
+      return
+    }
+
+    if (this.elevations.length === 0) {
+      this.warn('Must use a create command before braces.')
       return
     }
 
@@ -645,12 +796,13 @@ class Parser {
           elevation.numberOfTiles = args[0]
           break
         case 0x4B: // set_scale_by_groups
-          elevation.scalingMode = 1
+          elevation.scalingType = 1
           break
         case 0x4C: // set_scale_by_size
-          elevation.scalingMode = 2
+          elevation.scalingType = 2
           break
         case 0x4D: // set_avoid_player_start_areas
+          // This is the default behaviour.
           break
       }
     }

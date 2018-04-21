@@ -2,9 +2,10 @@ const Module = require('./Module')
 const MapStack = require('./MapStack')
 
 class TerrainGenerator extends Module {
-  constructor (map, parent, terrains) {
+  constructor (map, parent, terrains, hotspots = []) {
     super(map, parent, true)
     this.terrains = terrains
+    this.hotspots = hotspots
     this.random = parent.random
 
     this.schedule = 2.0
@@ -40,6 +41,7 @@ class TerrainGenerator extends Module {
       }
     }
 
+    this.map.clearTerrain(0, 0, this.map.sizeX, this.map.sizeY, true);
     this.checkBorders()
   }
 
@@ -122,10 +124,24 @@ class TerrainGenerator extends Module {
   generateModifiers () {
     this.searchMap.fill(0)
 
+    if (this.hotspots.length === 0) {
+      return
+    }
+
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
         // TODO Take hotspot code from src sub_00535B20
         this.searchMapRows[y][x] = 0
+
+        let value = 0
+        for (const hotspot of this.hotspots) {
+          const distX = Math.abs(x - hotspot.x)
+          const distY = Math.abs(y - hotspot.y)
+          const dist = Math.floor(hotspot.radius - Math.sqrt(distX ** 2 + distY ** 2))
+          if (dist > 0) value += dist * hotspot.fade
+        }
+
+        this.searchMapRows[y][x] = Math.min(101, value)
       }
     }
   }
@@ -154,15 +170,17 @@ class TerrainGenerator extends Module {
         return true
       }
       if (x > 0 && (
-            isWaterTile(x - 1, y) ||
-            y > 0 && isWaterTile(x - 1, y - 1) ||
-            y < map.sizeY - 1 && isWaterTile(x - 1, y + 1))) {
+        isWaterTile(x - 1, y) ||
+        y > 0 && isWaterTile(x - 1, y - 1) ||
+        y < map.sizeY - 1 && isWaterTile(x - 1, y + 1)
+      )) {
         return true
       }
       if (x < map.sizeX - 1 && (
-            isWaterTile(x + 1, y) ||
-            y > 0 && isWaterTile(x + 1, y - 1) ||
-            y < map.sizeY - 1 && isWaterTile(x + 1, y + 1))) {
+        isWaterTile(x + 1, y) ||
+        y > 0 && isWaterTile(x + 1, y - 1) ||
+        y < map.sizeY - 1 && isWaterTile(x + 1, y + 1)
+      )) {
         return true
       }
       return false
@@ -207,7 +225,9 @@ class TerrainGenerator extends Module {
     for (let cy = minY; cy < maxY; cy += 1) {
       for (let cx = minX; cx < maxX; cx += 1) {
         const tile = this.map.get({ x: cx, y: cy })
-        if (tile.terrain === desc.type) score += 1
+        if (tile.terrain === desc.type) {
+          score += 1
+        }
       }
     }
 

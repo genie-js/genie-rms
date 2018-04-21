@@ -30,9 +30,11 @@ class ScriptController extends Module {
 
     this.createSharedResources()
 
+    console.time('parse')
     this.parser.write(randomMapDef)
     this.parser.write(this.source)
     this.parser.end()
+    console.timeEnd('parse')
 
     /*
     if (this.parser.elevation) {
@@ -46,7 +48,7 @@ class ScriptController extends Module {
       this.addModule(new TerrainGenerator(this.map, this, this.parser.terrains))
     }
     if (this.parser.objects.length > 0) {
-      this.addModule(new ObjectsGenerator(this.map, this, this.world, this.parser.objects))
+      this.addModule(new ObjectsGenerator(this.map, this, this.world, this.parser.objects, this.parser.objectHotspots))
     }
     /*
     if (this.parser.cliffs) {

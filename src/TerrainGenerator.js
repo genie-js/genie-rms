@@ -41,7 +41,7 @@ class TerrainGenerator extends Module {
       }
     }
 
-    this.map.clearTerrain(0, 0, this.map.sizeX, this.map.sizeY, true);
+    this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, 1);
     this.checkBorders()
   }
 

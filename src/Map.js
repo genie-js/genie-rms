@@ -1,6 +1,10 @@
 const ZoneMapList = require('./ZoneMapList')
 const pngjs = require('pngjs')
 
+function __OFSUB__ (x, y) {
+  return 0
+}
+
 class Tile {
   constructor (terrain, elevation) {
     this.type = 0 // Probably slope?
@@ -12,7 +16,8 @@ class Tile {
 
   place (object) {
     if (this.object) {
-      throw new Error('Cannot place multiple objects on one tile')
+      // throw new Error('Cannot place multiple objects on one tile')
+      console.warn('Cannot place multiple objects on one tile')
     }
     this.object = object
   }
@@ -42,6 +47,113 @@ class Map {
   place (tile, unit) {
     console.log('placing', unit, 'on', tile)
     this.get(tile).place(unit)
+  }
+
+  cleanTerrain (minX, minY, maxX, maxY, terrain) {
+    if (minX < 0) minX = 0
+    if (minY < 0) minY = 0
+    if (maxX >= this.sizeX) maxX = this.sizeX - 1
+    if (maxY >= this.sizeY) maxY = this.sizeY - 1
+
+    console.log('cleanTerrain', { minX, minY, maxX, maxY, terrain })
+
+    let didUpdate = true
+    while (didUpdate) {
+      didUpdate = false
+
+      // Widen cleaning area as long as we still had updates on the last iteration
+      if (minX > 0) minX -= 1
+      if (minY > 0) minY -= 1
+      if (maxX < this.sizeX - 1) maxX += 1
+      if (maxY < this.sizeY - 1) maxY += 1
+
+      for (let v35 = 0; __OFSUB__(v35 + 1, 2) ^ (v35 - 1 < 0); v35 += 1) {
+        if (minY > maxY) {
+          continue
+        }
+        for (let y = minY; y <= maxY; y += 1) {
+          if (minX > maxX) {
+            continue
+          }
+          for (let x = minX; x <= maxX; x += 1) {
+            if (this.get({ x: minX, y: y }).terrain === terrain) {
+              continue
+            }
+            const topIsSame = y > 0 && this.get({ x, y: y - 1 }).terrain === terrain
+            const bottomIsSame = y < this.sizeY - 1 && this.get({ x, y: y + 1 }).terrain === terrain
+            const leftIsSame = x > 0 && this.get({ x: x - 1, y }).terrain === terrain
+            const rightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y }).terrain === terrain
+            let bottomLeftIsSame = false
+            let topLeftIsSame = false
+            let topRightIsSame = false
+            let bottomRightIsSame = false
+            if (v35 !== 1) {
+              bottomRightIsSame = false // ?
+              // was GOTO to inside the if() after this else block
+            } else if (y > 0) {
+              topLeftIsSame = x > 0 && this.get({ x: x - 1, y: y - 1 }).terrain === terrain
+              topRightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y: y - 1 }).terrain === terrain
+            }
+            if (y >= this.sizeY - 1) {
+              bottomRightIsSame = false
+            } else {
+              bottomLeftIsSame = x > 0 && this.get({ x: x - 1, y: y + 1 }).terrain === terrain
+              bottomRightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y: y + 1 }).terrain === terrain
+            }
+            let shouldUpdate = false
+            if (v35) {
+              if (topLeftIsSame &&
+                  ((topRightIsSame && !topIsSame) ||
+                   (rightIsSame && !topRightIsSame) ||
+                   (bottomLeftIsSame && !leftIsSame) ||
+                   (bottomIsSame && !bottomLeftIsSame) ||
+                   (bottomRightIsSame && !bottomIsSame && !rightIsSame))) { shouldUpdate = true }
+              if (topRightIsSame &&
+                  !shouldUpdate &&
+                  ((topLeftIsSame && !topIsSame) ||
+                   (leftIsSame && !topLeftIsSame) ||
+                   (bottomRightIsSame && !rightIsSame) ||
+                   (bottomIsSame && !bottomRightIsSame) ||
+                   (bottomLeftIsSame && !leftIsSame && !bottomIsSame))) { shouldUpdate = true }
+              if (bottomRightIsSame &&
+                  !shouldUpdate &&
+                  ((topRightIsSame && !rightIsSame) ||
+                   (topIsSame && !topRightIsSame) ||
+                   (bottomLeftIsSame && !bottomIsSame) ||
+                   (leftIsSame && !bottomLeftIsSame) ||
+                   (topLeftIsSame && !leftIsSame && !topIsSame))) { shouldUpdate = true }
+              if (!bottomLeftIsSame) {
+                if (!shouldUpdate) { continue }
+                this.setTerrainAbsolute(null /* world */, x, y, terrain, 0, 0)
+                didUpdate = true
+                continue
+              }
+              if (shouldUpdate ||
+                  (topLeftIsSame && !leftIsSame) ||
+                  (topIsSame && !topLeftIsSame) ||
+                  (bottomRightIsSame && !bottomIsSame) ||
+                  (rightIsSame && !bottomRightIsSame) ||
+                  (topRightIsSame && !rightIsSame && !topIsSame)) {
+                this.setTerrainAbsolute(null /* world */, x, y, terrain, 0, 0)
+                didUpdate = true
+                continue
+              }
+            } else {
+              if ((topIsSame && bottomIsSame) || (rightIsSame && leftIsSame)) {
+                this.setTerrainAbsolute(null /* world */, x, y, terrain, 0, 0)
+                didUpdate = true
+                continue
+              }
+            }
+          }
+        }
+      } // while ( signFlag ^ overflowFlag )
+    }
+  }
+
+  setTerrainAbsolute (world, x, y, terrain) {
+    console.log('setTerrainAbsolute', { x, y, terrain })
+    this.get({ x, y }).terrain = terrain
   }
 
   render () {

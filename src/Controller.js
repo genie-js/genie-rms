@@ -14,18 +14,30 @@ const CliffGenerator = require('./CliffGenerator.js')
 const randomMapDef = fs.readFileSync(path.join(__dirname, 'random_map.def'), 'utf8')
 
 class ScriptController extends Module {
-  constructor (source) {
+  constructor (source, options = {}) {
     super(null, null, false)
     this.source = source
-    this.random = new CRandom(Date.now())
+    this.options = options
+
+    this.random = this.options.random
+      || new CRandom(Date.now())
 
     this.map = new Map()
     this.world = new World()
+
+    if (typeof this.options.onWarn === 'function') {
+      this.onWarn = this.options.onWarn
+    }
+  }
+
+  onWarn (err) {
+    console.warn('!!', err.message, 'at', `${err.line}:${err.column}`)
   }
 
   generate () {
     this.parser = new Parser({
-      random: this.random
+      random: this.random,
+      onWarn: this.onWarn
     })
 
     this.createSharedResources()

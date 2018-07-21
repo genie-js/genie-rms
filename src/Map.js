@@ -41,6 +41,9 @@ class Map {
   get ({ x, y }) {
     return this.terrain[y][x]
   }
+  get_ (x, y) {
+    return this.terrain[y][x]
+  }
 
   place (tile, unit) {
     console.log('placing', unit, 'on', tile)
@@ -54,6 +57,7 @@ class Map {
     if (maxY >= this.sizeY) maxY = this.sizeY - 1
 
     console.log('cleanTerrain', { minX, minY, maxX, maxY, terrain })
+    const world = null
 
     let didUpdate = true
     while (didUpdate) {
@@ -65,22 +69,20 @@ class Map {
       if (maxX < this.sizeX - 1) maxX += 1
       if (maxY < this.sizeY - 1) maxY += 1
 
+      if (minY > maxY) { continue }
+      if (minX > maxX) { continue }
+
       for (let pass = 0; pass < 2; pass += 1) {
-        if (minY > maxY) {
-          continue
-        }
         for (let y = minY; y <= maxY; y += 1) {
-          if (minX > maxX) {
-            continue
-          }
           for (let x = minX; x <= maxX; x += 1) {
-            if (this.get({ x: minX, y: y }).terrain === terrain) {
+            if (this.get_(minX, y).terrain === terrain) {
               continue
             }
-            const topIsSame = y > 0 && this.get({ x, y: y - 1 }).terrain === terrain
-            const bottomIsSame = y < this.sizeY - 1 && this.get({ x, y: y + 1 }).terrain === terrain
-            const leftIsSame = x > 0 && this.get({ x: x - 1, y }).terrain === terrain
-            const rightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y }).terrain === terrain
+
+            const topIsSame = y > 0 && this.get_(x, y - 1).terrain === terrain
+            const bottomIsSame = y < this.sizeY - 1 && this.get_(x, y + 1).terrain === terrain
+            const leftIsSame = x > 0 && this.get_(x - 1, y).terrain === terrain
+            const rightIsSame = x < this.sizeX - 1 && this.get_(x + 1, y).terrain === terrain
             let bottomLeftIsSame = false
             let topLeftIsSame = false
             let topRightIsSame = false
@@ -89,14 +91,14 @@ class Map {
               bottomRightIsSame = false // ?
               // was GOTO to inside the if() after this else block
             } else if (y > 0) {
-              topLeftIsSame = x > 0 && this.get({ x: x - 1, y: y - 1 }).terrain === terrain
-              topRightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y: y - 1 }).terrain === terrain
+              topLeftIsSame = x > 0 && this.get_(x - 1, y - 1).terrain === terrain
+              topRightIsSame = x < this.sizeX - 1 && this.get_(x + 1, y - 1).terrain === terrain
             }
             if (y >= this.sizeY - 1) {
               bottomRightIsSame = false
             } else {
-              bottomLeftIsSame = x > 0 && this.get({ x: x - 1, y: y + 1 }).terrain === terrain
-              bottomRightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y: y + 1 }).terrain === terrain
+              bottomLeftIsSame = x > 0 && this.get_(x - 1, y + 1).terrain === terrain
+              bottomRightIsSame = x < this.sizeX - 1 && this.get_(x + 1, y + 1).terrain === terrain
             }
             let shouldUpdate = false
             if (pass) {
@@ -105,24 +107,30 @@ class Map {
                    (rightIsSame && !topRightIsSame) ||
                    (bottomLeftIsSame && !leftIsSame) ||
                    (bottomIsSame && !bottomLeftIsSame) ||
-                   (bottomRightIsSame && !bottomIsSame && !rightIsSame))) { shouldUpdate = true }
+                   (bottomRightIsSame && !bottomIsSame && !rightIsSame))) {
+                shouldUpdate = true
+              }
               if (topRightIsSame &&
                   !shouldUpdate &&
                   ((topLeftIsSame && !topIsSame) ||
                    (leftIsSame && !topLeftIsSame) ||
                    (bottomRightIsSame && !rightIsSame) ||
                    (bottomIsSame && !bottomRightIsSame) ||
-                   (bottomLeftIsSame && !leftIsSame && !bottomIsSame))) { shouldUpdate = true }
+                   (bottomLeftIsSame && !leftIsSame && !bottomIsSame))) {
+                shouldUpdate = true
+              }
               if (bottomRightIsSame &&
                   !shouldUpdate &&
                   ((topRightIsSame && !rightIsSame) ||
                    (topIsSame && !topRightIsSame) ||
                    (bottomLeftIsSame && !bottomIsSame) ||
                    (leftIsSame && !bottomLeftIsSame) ||
-                   (topLeftIsSame && !leftIsSame && !topIsSame))) { shouldUpdate = true }
+                   (topLeftIsSame && !leftIsSame && !topIsSame))) {
+                shouldUpdate = true
+              }
               if (!bottomLeftIsSame) {
                 if (!shouldUpdate) { continue }
-                this.setTerrainAbsolute(null /* world */, x, y, terrain, 0, 0)
+                this.setTerrainAbsolute(world, x, y, terrain, 0, 0)
                 didUpdate = true
                 continue
               }
@@ -132,33 +140,32 @@ class Map {
                   (bottomRightIsSame && !bottomIsSame) ||
                   (rightIsSame && !bottomRightIsSame) ||
                   (topRightIsSame && !rightIsSame && !topIsSame)) {
-                this.setTerrainAbsolute(null /* world */, x, y, terrain, 0, 0)
+                this.setTerrainAbsolute(world, x, y, terrain, 0, 0)
                 didUpdate = true
                 continue
               }
             } else {
               if ((topIsSame && bottomIsSame) || (rightIsSame && leftIsSame)) {
-                this.setTerrainAbsolute(null /* world */, x, y, terrain, 0, 0)
+                this.setTerrainAbsolute(world, x, y, terrain, 0, 0)
                 didUpdate = true
                 continue
               }
             }
           }
         }
-      } // while ( signFlag ^ overflowFlag )
+      }
     }
   }
 
   setTerrainAbsolute (world, x, y, terrain) {
-    console.log('setTerrainAbsolute', { x, y, terrain })
-    this.get({ x, y }).terrain = terrain
+    this.get_(x, y).terrain = terrain
   }
 
   render () {
     const imageData = new Uint8Array(this.sizeX * this.sizeY * 4)
     for (let y = 0; y < this.sizeY; y++) {
       for (let x = 0; x < this.sizeX; x++) {
-        const tile = this.get({ x, y })
+        const tile = this.get_(x, y)
 
         let color = terrainColors[tile.terrain]
         if (tile.object && unitColors[tile.object.type]) {

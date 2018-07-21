@@ -1,5 +1,5 @@
 const Struct = require('awestruct')
-const ScriptController = require('./Controller')
+const ScriptController = require('./Controller.js')
 const t = Struct.types
 
 const localFileHeader = Struct([

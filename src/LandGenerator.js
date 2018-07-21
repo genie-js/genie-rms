@@ -1,4 +1,4 @@
-const Module = require('./Module')
+const Module = require('./Module.js')
 
 class LandGenerator extends Module {
   constructor (map, parent, data) {

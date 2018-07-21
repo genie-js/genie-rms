@@ -1,16 +1,16 @@
 const fs = require('fs')
 const path = require('path')
-const Module = require('./Module')
-const CRandom = require('./CRandom')
-const Map = require('./Map')
-const World = require('./World')
-const Parser = require('./Parser')
-const LandGenerator = require('./LandGenerator')
-const TerrainGenerator = require('./TerrainGenerator')
-const ElevationGenerator = require('./ElevationGenerator')
-const ConnectionGenerator = require('./ConnectionGenerator')
-const ObjectsGenerator = require('./ObjectsGenerator')
-const CliffGenerator = require('./CliffGenerator')
+const Module = require('./Module.js')
+const CRandom = require('./CRandom.js')
+const Map = require('./Map.js')
+const World = require('./World.js')
+const Parser = require('./Parser.js')
+const LandGenerator = require('./LandGenerator.js')
+const TerrainGenerator = require('./TerrainGenerator.js')
+const ElevationGenerator = require('./ElevationGenerator.js')
+const ConnectionGenerator = require('./ConnectionGenerator.js')
+const ObjectsGenerator = require('./ObjectsGenerator.js')
+const CliffGenerator = require('./CliffGenerator.js')
 const randomMapDef = fs.readFileSync(path.join(__dirname, 'random_map.def'), 'utf8')
 
 class ScriptController extends Module {
@@ -48,7 +48,7 @@ class ScriptController extends Module {
       this.addModule(new TerrainGenerator(this.map, this, this.parser.terrains))
     }
     if (this.parser.objects.length > 0) {
-      this.addModule(new ObjectsGenerator(this.map, this, this.world, this.parser.objects, this.parser.objectHotspots))
+      // this.addModule(new ObjectsGenerator(this.map, this, this.world, this.parser.objects, this.parser.objectHotspots))
     }
     /*
     if (this.parser.cliffs) {

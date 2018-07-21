@@ -1,5 +1,5 @@
-const Module = require('./Module')
-const MapStack = require('./MapStack')
+const Module = require('./Module.js')
+const MapStack = require('./MapStack.js')
 
 class TerrainGenerator extends Module {
   constructor (map, parent, terrains, hotspots = []) {

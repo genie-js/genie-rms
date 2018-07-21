@@ -1,4 +1,4 @@
-const ZoneMap = require('./ZoneMap')
+const ZoneMap = require('./ZoneMap.js')
 
 module.exports = class ZoneMapList {
   constructor (map) {

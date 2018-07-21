@@ -1,5 +1,5 @@
-const Module = require('./Module')
-const MapStack = require('./MapStack')
+const Module = require('./Module.js')
+const MapStack = require('./MapStack.js')
 
 class ElevationGenerator extends Module {
   constructor (map, parent, elevations, hotspots) {

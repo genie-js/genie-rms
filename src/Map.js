@@ -1,4 +1,6 @@
-const ZoneMapList = require('./ZoneMapList')
+const ZoneMapList = require('./ZoneMapList.js')
+const terrainColors = require('./terrainColors.json')
+const unitColors = require('./unitColors.json')
 const pngjs = require('pngjs')
 
 function __OFSUB__ (x, y) {
@@ -162,9 +164,9 @@ class Map {
       for (let x = 0; x < this.sizeX; x++) {
         const tile = this.get({ x, y })
 
-        let color = require('./terrainColors')[tile.terrain]
-        if (tile.object && require('./unitColors')[tile.object.type]) {
-          color = require('./unitColors')[tile.object.type]
+        let color = terrainColors[tile.terrain]
+        if (tile.object && unitColors[tile.object.type]) {
+          color = unitColors[tile.object.type]
         }
 
         color = color

@@ -1,6 +1,6 @@
-const Token = require('./Token')
-const CRandom = require('./CRandom')
-const defaultTokens = require('./defaultTokens')
+const Token = require('./Token.js')
+const CRandom = require('./CRandom.js')
+const defaultTokens = require('./defaultTokens.js')
 
 const TOKEN_TYPE_SYNTAX = 0
 const TOKEN_TYPE_DEFINE = 1

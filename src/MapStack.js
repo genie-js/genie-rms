@@ -1,6 +1,6 @@
 const by = require('sort-by')
 
-module.exports = class MapStack extends Array {
+class MapStack extends Array {
   add (x, y, cost, totalCost) {
     const node = x instanceof MapStack.Node ? x : createNode()
 
@@ -41,13 +41,15 @@ module.exports = class MapStack extends Array {
     while (len) {
       const rand = Math.floor(Math.random() * len--)
       // Swap.
-      ;[this[len], this[rand]] = [this[rand], this[len]]
+      const t = this[len]
+      this[len] = this[rand]
+      this[rand] = t
     }
     return this
   }
 }
 
-module.exports.Node = class MapStackNode {
+MapStack.Node = class MapStackNode {
   constructor (x, y) {
     this.x = x
     this.y = y
@@ -55,3 +57,5 @@ module.exports.Node = class MapStackNode {
     this.totalCost = 0
   }
 }
+
+module.exports = MapStack

@@ -1,4 +1,4 @@
-const Module = require('./Module')
+const Module = require('./Module.js')
 
 class CliffGenerator extends Module {
   constructor (map, parent, cliffs) {

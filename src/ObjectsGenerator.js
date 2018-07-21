@@ -1,5 +1,5 @@
-const Module = require('./Module')
-const MapStack = require('./MapStack')
+const Module = require('./Module.js')
+const MapStack = require('./MapStack.js')
 
 function toObjectPosition (tile) {
   return {

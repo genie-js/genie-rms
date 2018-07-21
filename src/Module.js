@@ -1,5 +1,5 @@
 const by = require('sort-by')
-const MapStack = require('./MapStack')
+const MapStack = require('./MapStack.js')
 
 class Module {
   constructor (map, parent, resourcesNeeded) {

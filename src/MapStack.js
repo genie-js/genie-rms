@@ -66,7 +66,12 @@ class MapStack {
   }
 
   sort () {
-    const arr = this.list.toArray()
+    const arr = []
+    const node = this.list.head
+    while (node) {
+      arr.push(node)
+      node = node.next
+    }
     this.list = Yallist.create(arr.sort(byTotalCost))
   }
 
@@ -90,7 +95,7 @@ class MapStack {
 
 MapStack.Node = class MapStackNode extends Yallist.Node {
   constructor (x, y) {
-    super(null)
+    super(undefined)
 
     this.x = x
     this.y = y

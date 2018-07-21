@@ -3,10 +3,6 @@ const terrainColors = require('./terrainColors.json')
 const unitColors = require('./unitColors.json')
 const pngjs = require('pngjs')
 
-function __OFSUB__ (x, y) {
-  return 0
-}
-
 class Tile {
   constructor (terrain, elevation) {
     this.type = 0 // Probably slope?
@@ -69,7 +65,7 @@ class Map {
       if (maxX < this.sizeX - 1) maxX += 1
       if (maxY < this.sizeY - 1) maxY += 1
 
-      for (let v35 = 0; __OFSUB__(v35 + 1, 2) ^ (v35 - 1 < 0); v35 += 1) {
+      for (let pass = 0; pass < 2; pass += 1) {
         if (minY > maxY) {
           continue
         }
@@ -89,7 +85,7 @@ class Map {
             let topLeftIsSame = false
             let topRightIsSame = false
             let bottomRightIsSame = false
-            if (v35 !== 1) {
+            if (pass !== 1) {
               bottomRightIsSame = false // ?
               // was GOTO to inside the if() after this else block
             } else if (y > 0) {
@@ -103,7 +99,7 @@ class Map {
               bottomRightIsSame = x < this.sizeX - 1 && this.get({ x: x + 1, y: y + 1 }).terrain === terrain
             }
             let shouldUpdate = false
-            if (v35) {
+            if (pass) {
               if (topLeftIsSame &&
                   ((topRightIsSame && !topIsSame) ||
                    (rightIsSame && !topRightIsSame) ||

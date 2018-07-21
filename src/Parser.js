@@ -175,6 +175,21 @@ class Parser {
         fade: 20
       })
     }
+
+    return {
+      terrains: this.terrains,
+      lands: this.lands,
+      activeLands: this.activeLands,
+      objects: this.objects,
+      connections: this.connections,
+      elevations: this.elevations,
+      cliffs: this.cliffs,
+
+      terrainHotspots: this.terrainHotspots,
+      objectHotspots: this.objectHotspots,
+      elevationHotspots: this.elevationHotspots,
+      cliffHotspots: this.cliffHotspots,
+    }
   }
 
   runParseLoop () {

@@ -33,31 +33,29 @@ class ScriptController extends Module {
     console.time('parse')
     this.parser.write(randomMapDef)
     this.parser.write(this.source)
-    this.parser.end()
+    const parseResult = this.parser.end()
     console.timeEnd('parse')
 
-    /*
-    if (this.parser.elevation) {
-      this.addModule(new ElevationGenerator(this.map, this, this.parser.elevation))
+    console.log(parseResult)
+
+    if (parseResult.elevation) {
+      this.addModule(new ElevationGenerator(this.map, this, parseResult.elevation))
     }
-    if (this.parser.connections.length > 0) {
-      this.addModule(new ConnectionGenerator(this.map, this, this.parser.connections))
+    if (parseResult.connections.length > 0) {
+      this.addModule(new ConnectionGenerator(this.map, this, parseResult.connections))
     }
-    */
-    if (this.parser.terrains.length > 0) {
-      this.addModule(new TerrainGenerator(this.map, this, this.parser.terrains))
+    if (parseResult.terrains.length > 0) {
+      this.addModule(new TerrainGenerator(this.map, this, parseResult.terrains))
     }
-    if (this.parser.objects.length > 0) {
-      // this.addModule(new ObjectsGenerator(this.map, this, this.world, this.parser.objects, this.parser.objectHotspots))
+    if (parseResult.objects.length > 0) {
+      // this.addModule(new ObjectsGenerator(this.map, this, this.world, parseResult.objects, parseResult.objectHotspots))
     }
-    /*
-    if (this.parser.cliffs) {
-      this.addModule(new CliffGenerator(this.map, this, this.parser.cliffs))
+    if (parseResult.cliffs) {
+      this.addModule(new CliffGenerator(this.map, this, parseResult.cliffs))
     }
-    if (this.parser.lands.length > 0) {
-      this.addModule(new LandGenerator(this.map, this, this.parser.lands))
+    if (parseResult.lands.length > 0) {
+      this.addModule(new LandGenerator(this.map, this, parseResult.lands))
     }
-    */
 
     super.generate()
   }

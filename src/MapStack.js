@@ -1,38 +1,75 @@
-const by = require('sort-by')
+const Yallist = require('yallist')
+const byTotalCost = require('sort-by')('totalCost')
 
-class MapStack extends Array {
+function createNode (x, y, cost, totalCost) {
+  const node = new MapStack.Node(x, y)
+  node.cost = cost
+  node.totalCost = totalCost
+  return node
+}
+
+function insertBefore (list, before, nnode) {
+  const { prev } = before
+  before.prev = node
+  node.prev = prev
+  node.list = list
+  node.next = before
+  list.length++
+}
+
+class MapStack {
+  constructor () {
+    this.list = Yallist.create()
+  }
+
+  get length () {
+    return this.list.length
+  }
+
+  unshift (node) {
+    return this.list.unshift(node)
+  }
+  push (node) {
+    return this.list.push(node)
+  }
+  pop (node) {
+    return this.list.pop()
+  }
+
   add (x, y, cost, totalCost) {
-    const node = x instanceof MapStack.Node ? x : createNode()
+    const node = x instanceof MapStack.Node ? x : createNode(x, y, cost, totalCost)
 
     if (this.length === 0) {
       this.push(node)
       return
     }
 
-    const existing = this.findIndex((other) => other.x === node.x && other.y === node.y)
-    if (existing !== -1) {
-      this.splice(existing, 1)
-    }
+    if (node.list) node.list.removeNode(node)
 
     // Sorted insert.
-    const index = this.findIndex((other) => other.totalCost >= node.totalCost)
-    this.splice(index, 0, node)
+    let other = this.list.head
+    while (other !== undefined && other.totalCost < node.totalCost) {
+      other = other.next
+    }
 
-    function createNode () {
-      const node = new MapStack.Node(x, y)
-      node.cost = cost
-      node.totalCost = totalCost
-      return node
+    if (other) {
+      if (other === this.list.head) {
+        this.unshift(node)
+      } else {
+        insertBefore(this.list, other, node)
+      }
+    } else {
+      this.push(node)
     }
   }
 
   sort () {
-    super.sort(by('totalCost'))
+    const arr = this.list.toArray()
+    this.list = Yallist.create(arr.sort(byTotalCost))
   }
 
   remove (node) {
-    const index = this.findIndex((other) => other.x === node.x && other.y === node.y)
-    if (index !== -1) this.splice(index, 1)
+    this.list.removeNode(node)
   }
 
   randomize () {

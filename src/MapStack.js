@@ -8,7 +8,7 @@ function createNode (x, y, cost, totalCost) {
   return node
 }
 
-function insertBefore (list, before, nnode) {
+function insertBefore (list, before, node) {
   const { prev } = before
   before.prev = node
   node.prev = prev
@@ -27,13 +27,15 @@ class MapStack {
   }
 
   unshift (node) {
-    return this.list.unshift(node)
+    return this.list.unshiftNode(node)
   }
   push (node) {
-    return this.list.push(node)
+    return this.list.pushNode(node)
   }
-  pop (node) {
-    return this.list.pop()
+  pop () {
+    const node = this.list.tail
+    if (node) this.list.removeNode(node)
+    return node
   }
 
   add (x, y, cost, totalCost) {
@@ -48,7 +50,7 @@ class MapStack {
 
     // Sorted insert.
     let other = this.list.head
-    while (other !== undefined && other.totalCost < node.totalCost) {
+    while (other !== null && other.totalCost < node.totalCost) {
       other = other.next
     }
 
@@ -86,8 +88,10 @@ class MapStack {
   }
 }
 
-MapStack.Node = class MapStackNode {
+MapStack.Node = class MapStackNode extends Yallist.Node {
   constructor (x, y) {
+    super(null)
+
     this.x = x
     this.y = y
     this.cost = 0

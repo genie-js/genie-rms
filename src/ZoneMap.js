@@ -1,3 +1,5 @@
+const Yallist = require('yallist')
+
 module.exports = class ZoneMap {
   constructor (map, terrainRules) {
     this.map = map
@@ -9,12 +11,16 @@ module.exports = class ZoneMap {
       this.zoneMapRows.push(this.zoneMap.subarray(map.sizeX * y, map.sizeX * (y + 1)))
     }
 
-    this._sizeCache = new Int32Array(255).fill(-1)
-    this.zoneInfo = new Int8Array(255)
+    this.zoneInfo = new Int8Array(255).fill(-1)
+    this._sizeCache = new Int32Array(255)
+    this._zoneQueue = null
 
     this.doZoneMap()
   }
 
+  /**
+   *
+   */
   doZoneMap () {
     this.zoneInfo.fill(-1)
     this.zoneMap.fill(-1)
@@ -37,10 +43,41 @@ module.exports = class ZoneMap {
     this.lastZone = zone
   }
 
-  doZoneMapArea (x, y, group, zone) {
-    // throw new Error('unimplemented')
+  _checkZoneXY (zoneQueue, x, y, group, zone) {
+    const curZone = this.zoneMapRows[y][x]
+    if (curZone === -1) {
+      const { terrain } = this.map.get({ x, y })
+      const curGroup = this.terrainRules[terrain] <= 0 ? 0 : 1
+      if (curGroup === group) {
+        this.zoneMapRows[y][x] = zone
+        zoneQueue.push({ x, y })
+      }
+    }
   }
 
+  /**
+   *
+   */
+  doZoneMapArea (x, y, group, zone) {
+    const zoneQueue = Yallist.create()
+
+    let node
+    do {
+      if (x > 0) this._checkZoneXY(zoneQueue, x - 1, y, group, zone)
+      if (y > 0) this._checkZoneXY(zoneQueue, x, y - 1, group, zone)
+      if (x < this.map.sizeX - 1) this._checkZoneXY(zoneQueue, x + 1, y, group, zone)
+      if (y < this.map.sizeY - 1) this._checkZoneXY(zoneQueue, x, y + 1, group, zone)
+      node = zoneQueue.pop()
+
+      if (node) {
+        ({ x, y } = node)
+      }
+    } while (node)
+  }
+
+  /**
+   * @return {boolean}
+   */
   checkInfo (terrainRules) {
     if (this.terrainRules.length !== terrainRules.length) {
       return false
@@ -50,6 +87,9 @@ module.exports = class ZoneMap {
       Math.sign(passability) === Math.sign(terrainRules[i]))
   }
 
+  /**
+   * @return {number}
+   */
   getZoneInfo (x, y) {
     if (!this.zoneMapRows[y]) console.log('err', x, y)
     return this.zoneMapRows[y][x]
@@ -59,9 +99,12 @@ module.exports = class ZoneMap {
     throw new Error('unimplemented')
   }
 
+  /**
+   * @return {number}
+   */
   numberTilesInZone (zone) {
     if (this._sizeCache[zone] === -1) {
-      this._sizeCache[zone] = this.zoneMap.filter((value) => value === zone).length
+      this._sizeCache[zone] = this.zoneMap.reduce((acc, value) => acc + (value === zone ? 1 : 0))
     }
     return this._sizeCache[zone]
   }

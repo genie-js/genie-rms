@@ -1,4 +1,4 @@
-const by = require('sort-by')
+const bySchedule = require('sort-by')('schedule')
 const MapStack = require('./MapStack.js')
 
 class Module {
@@ -22,7 +22,7 @@ class Module {
   }
 
   generate () {
-    this.modules.sort(by('schedule'))
+    this.modules.sort(bySchedule)
 
     for (const child of this.modules) {
       console.time(child.constructor.name)

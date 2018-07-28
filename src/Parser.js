@@ -94,21 +94,43 @@ class Parser {
     this.options.onWarn(warning)
   }
 
+  /**
+   * Define a builtin token, both constants and control flow (if, #include).
+   * @param {string} name The name of the token.
+   * @param {number} id The builtin token ID. Used by the parser to determine behaviour.
+   * @param {number} type The token type (constant, control flow, command, etc)
+   * @param {Array.<number>} argTypes The argument types for this token.
+   */
   defineToken (name, id, type, argTypes) {
     this.tokenTypes.push(new Token(id, name, type, null, argTypes))
   }
+
+  /**
+   * Define a user token, ie. a constant.
+   * @param {string} name The name of the constant.
+   * @param {number} type The constant type (existence or number).
+   * @param {number} value The integer value of the constant.
+   * @param {Array.<number>} argTypes The argument types for this token (none).
+   */
   defineUserToken (name, type, value, argTypes) {
     this.tokenTypes.push(new Token(null, name, type, value, argTypes))
   }
 
+  /**
+   * Parse some code.
+   * @param {string|Buffer} code
+   */
   write (code) {
     this.code = code.toString()
     this.index = 0
     this.line = 0
     this.column = 0
-    this.runParseLoop()
+    this._runParseLoop()
   }
 
+  /**
+   * Finish parsing, applying the final postprocessing steps.
+   */
   end () {
     for (const terrain of this.terrains) {
       if (terrain.scalingType === 1) { // scale_by_size
@@ -192,7 +214,10 @@ class Parser {
     }
   }
 
-  runParseLoop () {
+  /**
+   * Parse all available tokens.
+   */
+  _runParseLoop () {
     while (this.readNextToken()) {
       if (this.currentToken) this.parseToken()
     }
@@ -212,7 +237,7 @@ class Parser {
       if (err) throw err
       this.write(code)
       Object.assign(this, this.parseState.pop())
-      this.runParseLoop()
+      this._runParseLoop()
     })
   }
 

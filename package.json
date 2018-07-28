@@ -24,7 +24,7 @@
     "buble": "^0.15.2"
   },
   "scripts": {
-    "build:controller": "brfs src/Controller.js | buble -y dangerousForOf > lib/Controller.js",
-    "build": "buble src --output lib -y dangerousForOf && npm run build:controller"
+    "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
+    "build": "buble src --output lib -y dangerousForOf -m && npm run build:rmdef"
   }
 }

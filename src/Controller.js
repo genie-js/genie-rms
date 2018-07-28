@@ -1,5 +1,3 @@
-const fs = require('fs')
-const path = require('path')
 const Module = require('./Module.js')
 const CRandom = require('./CRandom.js')
 const Map = require('./Map.js')
@@ -11,7 +9,7 @@ const ElevationGenerator = require('./ElevationGenerator.js')
 const ConnectionGenerator = require('./ConnectionGenerator.js')
 const ObjectsGenerator = require('./ObjectsGenerator.js')
 const CliffGenerator = require('./CliffGenerator.js')
-const randomMapDef = fs.readFileSync(path.join(__dirname, 'random_map.def'), 'utf8')
+const randomMapDef = require('./randomMapDef.js')
 
 class ScriptController extends Module {
   constructor (source, options = {}) {

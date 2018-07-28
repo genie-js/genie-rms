@@ -67,7 +67,7 @@ class MapStack {
 
   sort () {
     const arr = []
-    const node = this.list.head
+    let node = this.list.head
     while (node) {
       arr.push(node)
       node = node.next

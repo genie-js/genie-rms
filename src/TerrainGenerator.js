@@ -11,13 +11,20 @@ class TerrainGenerator extends Module {
     this.schedule = 2.0
   }
 
-  generate () {
+  /**
+   * Apply the base terrain to all tiles on the map.
+   */
+  _applyBaseTerrain () {
     const baseTerrain = this.parent.parser.baseTerrain
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
         this.map.get({ x, y }).terrain = baseTerrain
       }
     }
+  }
+
+  generate () {
+    this._applyBaseTerrain()
 
     this.generateModifiers()
 
@@ -152,44 +159,44 @@ class TerrainGenerator extends Module {
     for (let y = 0; y < map.sizeY; y++) {
       for (let x = 0; x < map.sizeX; x++) {
         const tile = map.get({ x, y })
-        if (isIce(tile.terrain) && isBorderedByWater(x, y)) {
+        if (isIce(tile.terrain) && this._isBorderedByWater(x, y)) {
           tile.terrain = 37 // Ice Beach
         } else if (tile.terrain !== 2) { // Beach
-          if (isSnow(tile.terrain) && isBorderedByWater(x, y)) {
+          if (isSnow(tile.terrain) && this._isBorderedByWater(x, y)) {
             tile.terrain = 37 // Ice Beach
-          } else if (!isWaterTile(x, y) && isBorderedByWater(x, y)) {
+          } else if (!this._isWaterTile(x, y) && this._isBorderedByWater(x, y)) {
             tile.terrain = 2 // Beach
           }
         }
       }
     }
+  }
 
-    function isBorderedByWater (x, y) {
-      if (y > 0 && isWaterTile(x, y - 1) ||
-          y < map.sizeY - 1 && isWaterTile(x, y + 1)) {
-        return true
-      }
-      if (x > 0 && (
-        isWaterTile(x - 1, y) ||
-        y > 0 && isWaterTile(x - 1, y - 1) ||
-        y < map.sizeY - 1 && isWaterTile(x - 1, y + 1)
-      )) {
-        return true
-      }
-      if (x < map.sizeX - 1 && (
-        isWaterTile(x + 1, y) ||
-        y > 0 && isWaterTile(x + 1, y - 1) ||
-        y < map.sizeY - 1 && isWaterTile(x + 1, y + 1)
-      )) {
-        return true
-      }
-      return false
+  _isBorderedByWater (x, y) {
+    if (y > 0 && this._isWaterTile(x, y - 1) ||
+        y < this.map.sizeY - 1 && this._isWaterTile(x, y + 1)) {
+      return true
     }
+    if (x > 0 && (
+      this._isWaterTile(x - 1, y) ||
+      y > 0 && this._isWaterTile(x - 1, y - 1) ||
+      y < this.map.sizeY - 1 && this._isWaterTile(x - 1, y + 1)
+    )) {
+      return true
+    }
+    if (x < this.map.sizeX - 1 && (
+      this._isWaterTile(x + 1, y) ||
+      y > 0 && this._isWaterTile(x + 1, y - 1) ||
+      y < this.map.sizeY - 1 && this._isWaterTile(x + 1, y + 1)
+    )) {
+      return true
+    }
+    return false
+  }
 
-    function isWaterTile (x, y) {
-      const { terrain } = map.get({ x, y })
-      return isWater(terrain)
-    }
+  _isWaterTile (x, y) {
+    const tile = this.map.get({ x, y })
+    return isWater(tile.terrain)
   }
 
   canPlaceTerrainOn (x, y, desc) {

@@ -68,7 +68,7 @@ class Map {
       for (let pass = 0; pass < 2; pass += 1) {
         for (let y = minY; y <= maxY; y += 1) {
           for (let x = minX; x <= maxX; x += 1) {
-            if (this.get_(minX, y).terrain === terrain) {
+            if (this.get_(x, y).terrain === terrain) {
               continue
             }
 

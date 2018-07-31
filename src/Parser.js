@@ -45,6 +45,10 @@ const IF_STATE_FAIL = 1
 const IF_STATE_MATCH = 2
 const IF_STATE_DONE = 3
 
+const hardcodedDrsIncludes = {
+  54103: require('./landResources')
+}
+
 /**
  * An implementation of the Age of Empires 2 Random Map Script parser,
  * staying true to the original.
@@ -71,6 +75,7 @@ class Parser {
     this.randomDepth = 0
     this.randomState = 0
     this.ifStack = []
+    this.parseState = []
 
     this.terrains = []
     this.lands = []
@@ -223,20 +228,35 @@ class Parser {
     }
   }
 
-  include (file) {
+  _pushState () {
     this.parseState.push({
       code: this.code,
       index: this.index,
       line: this.line,
       column: this.column
     })
+  }
+
+  _popState () {
+    Object.assign(this, this.parseState.pop())
+  }
+
+  includeCode (code) {
+    this._pushState()
+    this.write(code)
+    this._popState()
+    this._runParseLoop()
+  }
+
+  include (file) {
+    this._pushState()
     if (!this.options.include) {
       throw new Error('#include is not supported')
     }
     this.options.include(file, (err, code) => {
       if (err) throw err
       this.write(code)
-      Object.assign(this, this.parseState.pop())
+      this._popState()
       this._runParseLoop()
     })
   }
@@ -309,7 +329,7 @@ class Parser {
         if (typeof value === 'object') args.push(value)
       }
       if (argType === ARGTYPE_TOKEN2) args.push(this.readToken())
-      if (argType === ARGTYPE_FILE) throw new Error('Unsupported')
+      if (argType === ARGTYPE_FILE) args.push(this.readString())
     }
     this.currentArgs = args
 
@@ -393,8 +413,15 @@ class Parser {
         }
         case TOK_INCLUDE: // #include
           throw new Error('#include is not supported')
-        case TOK_INCLUDE_DRS: // #include_drs
-          throw new Error('#include_drs is not supported')
+        case TOK_INCLUDE_DRS: { // #include_drs
+          const [ name, id] = args
+          if (id in hardcodedDrsIncludes) {
+            this.includeCode(hardcodedDrsIncludes[id])
+          } else {
+            throw new Error('#include_drs is not supported')
+          }
+          break
+        }
         case TOK_PLAYER_SETUP: // <PLAYER_SETUP>
         case TOK_LAND_GENERATION: // <LAND_GENERATION>
         case TOK_CLIFF_GENERATION: // <CLIFF_GENERATION>

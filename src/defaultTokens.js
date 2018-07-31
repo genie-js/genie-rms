@@ -93,6 +93,6 @@ module.exports = [
   ['height_limits', 88, 0, [2, 2, 0, 0]],
   ['set_flat_terrain_only', 89, 0, [0, 0, 0, 0]],
   ['max_distance_to_other_zones', 91, 0, [2, 0, 0, 0]],
-  ['#include_dirs', 92, 0, [5, 2, 0, 0]],
+  ['#include_drs', 92, 0, [5, 2, 0, 0]],
   ['temp_min_distance_group_placement', 93, 0, [2, 0, 0, 0]]
 ]

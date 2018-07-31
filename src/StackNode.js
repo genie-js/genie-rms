@@ -26,7 +26,13 @@ class StackNode {
   }
 
   size () {
-    return this.next ? this.next.size() + 1 : 1
+    let s = 0
+    let node = this
+    while (node) {
+      s++
+      node = node.next
+    }
+    return s
   }
 }
 

@@ -8,6 +8,8 @@ function toObjectPosition (tile) {
   }
 }
 
+const { floor } = Math
+
 class ObjectsGenerator extends Module {
   constructor (map, parent, world, objects, hotspots) {
     super(map, parent, true)
@@ -49,7 +51,7 @@ class ObjectsGenerator extends Module {
     if (desc.numberOfGroups < 1) {
       desc.numberOfGroups = 1
     }
-    desc.numberOfGroups = Math.floor(desc.numberOfGroups)
+    desc.numberOfGroups = floor(desc.numberOfGroups)
 
     console.log('generateObject', desc.type, landId)
     if (landId < 0) {
@@ -84,7 +86,7 @@ class ObjectsGenerator extends Module {
     let placedGroups = 0
     let tile
     while ((tile = this.popStack(positions)) && placedGroups < numberOfGroups) {
-      if (!this._checkRestrictions(tile, maxDistanceToOtherZones, Math.floor(maxDistanceToOtherZones * 10 / 14))) {
+      if (!this._checkRestrictions(tile, maxDistanceToOtherZones, floor(maxDistanceToOtherZones * 10 / 14))) {
         continue
       }
       if (desc.baseTerrain !== -1 && this.map.get(tile).terrain !== desc.baseTerrain) {
@@ -92,8 +94,8 @@ class ObjectsGenerator extends Module {
       }
 
       const position = toObjectPosition(tile)
-      positions = this.avoidPosition(positions, tile, desc.minDistanceGroupPlacement)
-      positions = this.avoidPosition(positions, tile, desc.maxDistanceGroupPlacement)
+      this.avoidPosition(positions, tile, desc.minDistanceGroupPlacement)
+      this.avoidPosition(positions, tile, desc.maxDistanceGroupPlacement)
 
       if (desc.groupingType !== 0) {
         if (desc.groupingType === 1) {
@@ -105,7 +107,7 @@ class ObjectsGenerator extends Module {
         // TODO use the `position` instead
         this.map.place(tile, {
           type: desc.type,
-          playerId: desc.playerId
+          player: desc.playerId
         })
       }
 
@@ -140,14 +142,14 @@ class ObjectsGenerator extends Module {
 
     const coreZone = this.zoneMap.getZoneInfo(x, y)
     let next
-    while (groupsLeft > 0 && (next = positions.pop())) {
+    while (groupsLeft > 0 && (next = this.popStack(positions))) {
       if (this._tooClose(desc, next.x, next.y)) {
         continue
       }
       if (this.zoneMap.getZoneInfo(next.x, next.y) !== coreZone) {
         continue
       }
-      if (!this._checkRestrictions(next, maxDistanceToOtherZones, Math.floor(maxDistanceToOtherZones * 10 / 14))) {
+      if (!this._checkRestrictions(next, maxDistanceToOtherZones, floor(maxDistanceToOtherZones * 10 / 14))) {
         continue
       }
       if (desc.baseTerrain !== -1 && this.map.get(next).terrain !== desc.baseTerrain) {
@@ -160,13 +162,13 @@ class ObjectsGenerator extends Module {
           player: playerId
         })
       } else {
-        positions = this.avoidPosition(positions, next, desc.minDistanceGroupPlacement)
-        positions = this.avoidPosition(positions, next, desc.maxDistanceGroupPlacement)
+        this.avoidPosition(positions, next, desc.minDistanceGroupPlacement)
+        this.avoidPosition(positions, next, desc.maxDistanceGroupPlacement)
 
         if (desc.groupingType === 0) {
           this.map.place(next, {
             type: desc.type,
-            playerId: playerId
+            player: playerId
           })
         } else if (desc.groupingType === 1) {
           this.placeLooseGroup(desc, next, playerId)
@@ -195,6 +197,7 @@ class ObjectsGenerator extends Module {
     const diffX = maxX - minX
     const diffY = maxY - minY
 
+    console.time('prepareStack')
     for (let y = minY; y < maxY; y++) {
       for (let x = minX; x < maxX; x++) {
         if (this.searchMapRows[y][x] !== 0) {
@@ -202,8 +205,11 @@ class ObjectsGenerator extends Module {
         }
       }
     }
+    console.timeEnd('prepareStack')
 
-    let toGo = diffX * diffY / 4
+    let toGo = floor(diffX * diffY / 4)
+    console.log('randomizeStack', toGo)
+    console.time('randomizeStack')
     while (toGo--) {
       const x = minX + this.random.nextRange(diffX - 1)
       const y = minY + this.random.nextRange(diffY - 1)
@@ -212,6 +218,7 @@ class ObjectsGenerator extends Module {
         this.addStackNode(stack, this.nodes[y][x])
       }
     }
+    console.timeEnd('randomizeStack')
 
     console.log('generated', stack.size())
     return stack
@@ -269,8 +276,11 @@ class ObjectsGenerator extends Module {
     const maxX = Math.min(this.map.sizeX, x + margin)
     const maxY = Math.min(this.map.sizeY, y + margin)
 
-    return this.filterStack(tiles, (tile) =>
-      tile.x >= minX && tile.x < maxX && tile.y >= minY && tile.y < maxY)
+    for (const node of this.nodes) {
+      if (node.x >= minX && node.x < maxX && node.y >= minY && node.y <= maxY) {
+        this.removeStackNode(node)
+      }
+    }
   }
 
   _unavoidPosition ({ x, y }, minDistance, canPlaceHere, type) {

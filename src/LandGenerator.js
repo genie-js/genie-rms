@@ -11,7 +11,7 @@ class LandGenerator extends Module {
   generate () {
     this.clearStack()
     this.baseLandGenerate()
-    this.map.cleanTerrain(this.data.baseTerrain, 0, 0, this.map.sizeX, this.map.sizeY, this.data.baseTerrain)
+    this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.data.baseTerrain)
   }
 
   checkTerrainAndZone (target, landNum, x, y) {

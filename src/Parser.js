@@ -177,7 +177,7 @@ class Parser {
         x: player.x,
         y: player.y,
         id: 1,
-        playerId: player.id
+        playerId: player.id + 1
       })
       this.terrainHotspots.push({
         x: player.x,

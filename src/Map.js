@@ -3,6 +3,17 @@ const terrainColors = require('./terrainColors.json')
 const unitColors = require('./unitColors.json')
 const pngjs = require('pngjs')
 
+const playerColors = {
+  1: '#0000ff',
+  2: '#ff0000',
+  3: '#00ff00',
+  4: '#ffff00',
+  5: '#00ffff',
+  6: '#ff00ff',
+  7: '#434343',
+  8: '#ff8201'
+}
+
 const { floor, sqrt } = Math
 
 class Tile {
@@ -45,8 +56,8 @@ class Map {
   place (coords, unit) {
     console.log('placing', unit, 'on', coords)
     const tile = this.get(coords)
-    if (tile.object) throw new Error('Tried placing an object on a tile that already has an object')
-    tile.place(unit)
+    if (tile.object) return console.warn('!! Tried placing an object on a tile that already has an object')
+    tile.object = unit
   }
 
   cleanTerrain (minX, minY, maxX, maxY, terrain) {
@@ -301,6 +312,9 @@ class Map {
         let color = terrainColors[tile.terrain]
         if (tile.object && unitColors[tile.object.type]) {
           color = unitColors[tile.object.type]
+        }
+        if (tile.object && playerColors[tile.object.player]) {
+          color = playerColors[tile.object.player]
         }
 
         color = color

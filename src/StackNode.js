@@ -24,6 +24,10 @@ class StackNode {
     this.cost = 0
     this.totalCost = 0
   }
+
+  size () {
+    return this.next ? this.next.size() + 1 : 1
+  }
 }
 
 module.exports = StackNode

@@ -9,6 +9,7 @@ class ConnectionGenerator extends Module {
   }
 
   generate () {
+    this.clearStack()
   }
 }
 

@@ -49,19 +49,19 @@ class ScriptController extends Module {
     console.log(parseResult)
 
     if (parseResult.elevation) {
-      this.addModule(new ElevationGenerator(this.map, this, parseResult.elevation))
+      this.addModule(new ElevationGenerator(this.map, this, parseResult.elevation, parseResult.elevationHotspots))
     }
     if (parseResult.connections.length > 0) {
       this.addModule(new ConnectionGenerator(this.map, this, parseResult.connections))
     }
     if (parseResult.terrains.length > 0) {
-      this.addModule(new TerrainGenerator(this.map, this, parseResult.terrains))
+      this.addModule(new TerrainGenerator(this.map, this, parseResult.terrains, parseResult.terrainHotspots))
     }
     if (parseResult.objects.length > 0) {
       // this.addModule(new ObjectsGenerator(this.map, this, this.world, parseResult.objects, parseResult.objectHotspots))
     }
     if (parseResult.cliffs) {
-      this.addModule(new CliffGenerator(this.map, this, parseResult.cliffs))
+      this.addModule(new CliffGenerator(this.map, this, parseResult.cliffs, parseResult.cliffHotspots))
     }
     if (parseResult.lands.length > 0) {
       this.addModule(new LandGenerator(this.map, this, parseResult.lands))

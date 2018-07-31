@@ -26,7 +26,7 @@ class TerrainGenerator extends Module {
   generate () {
     this._applyBaseTerrain()
 
-    this.generateModifiers()
+    this._generateModifiers()
 
     const terrainRules = []
     for (let i = 0; i < 99; i++) {
@@ -35,7 +35,6 @@ class TerrainGenerator extends Module {
     this.zoneMap = this.map.mapZones.createZoneMap(terrainRules)
 
     for (const desc of this.terrains) {
-      console.log('generate terrain', desc)
       this.generateTerrain(desc)
     }
 
@@ -57,10 +56,16 @@ class TerrainGenerator extends Module {
     const sizeX = this.map.sizeX - 1
     const sizeY = this.map.sizeY - 1
 
+    const terrainFairnessZones = []
+    const terrainFairnessZonesVisited = []
     if (desc.avoidPlayerStartAreas === 2) {
-      // something with map zones.
-      // hotspots again it looks like!
+      this.hotspots.forEach((hs, i) => {
+        terrainFairnessZones[i].push(this.mapZone.getZoneInfo(hs.x, hs.y))
+        terrainFairnessZonesVisited[i].push(false)
+      })
     }
+
+    console.log('place', numberOfClumps, 'clumps of', desc.type)
 
     const clumps = []
     for (let i = 0; i < numberOfClumps; i++) {
@@ -68,67 +73,82 @@ class TerrainGenerator extends Module {
     }
 
     const stack = this.linkStackRandomly()
+    const baseArea = Math.min(2, 2 * Math.sqrt(desc.tiles / desc.numberOfClumps))
     let clumpsPlaced = 0
     let clumpIndex = 0
     let tilesPlaced = 0
     let next
 
-    while (clumpIndex < desc.numberOfClumps && (next = this.popStack(stack))) {
+    while (clumpIndex < numberOfClumps && (next = this.popStack(stack))) {
       const tile = this.map.get(next)
       const { x, y } = next
-      if (tile.terrain === desc.baseTerrain) {
-        if (this.canPlaceTerrainOn(x, y, desc) !== 0) {
-          if (!desc.avoidPlayerStartAreas || !this.searchMapRows[y][x]) {
-            tile.terrain = desc.type
-            const clump = clumps[clumpIndex]
-            if (next.x > 0) this.pushStack(clump, next.x - 1, next.y, 0, 0)
-            if (next.x < this.map.sizeX - 1) this.pushStack(clump, next.x + 1, next.y, 0, 0)
-            if (next.y > 0) this.pushStack(clump, next.x, next.y - 1, 0, 0)
-            if (next.y < this.map.sizeY - 1) this.pushStack(clump, next.x, next.y + 1, 0, 0)
-            tilesPlaced += 1
-            clumpIndex += 1
+      if (tile.terrain !== desc.baseTerrain) continue
+      if (this.canPlaceTerrainOn(x, y, desc) === 0) continue
+      if (desc.avoidPlayerStartAreas && this.searchMapRows[y][x] !== 0) continue
+
+      this.removeArea(x, y, baseArea)
+      tile.terrain = desc.type
+      const clump = clumps[clumpIndex]
+      if (next.x > 0) this.pushStack(clump, next.x - 1, next.y, 0, 0)
+      if (next.x < this.map.sizeX - 1) this.pushStack(clump, next.x + 1, next.y, 0, 0)
+      if (next.y > 0) this.pushStack(clump, next.x, next.y - 1, 0, 0)
+      if (next.y < this.map.sizeY - 1) this.pushStack(clump, next.x, next.y + 1, 0, 0)
+      tilesPlaced += 1
+      clumpIndex += 1
+
+      const zone = this.zoneMap.getZoneInfo(x, y)
+      if (desc.avoidPlayerStartAreas === 2) {
+        for (let i = 0; i < this.hotspots.length; i++) {
+          if (terrainFairnessZones[i] === zone && !terrainFairnessZonesVisited[i]) {
+            terrainFairnessZonesVisited[i] = true
           }
         }
       }
     }
 
-    for (const clump of clumps) {
-      while (tilesPlaced < desc.tiles && (next = this.popStack(clump))) {
-        const { x, y } = next
-        if (this.searchMapRows[y][x] > this.random.nextRange(100)) {
-          continue
-        }
-
-        // TODO numeric preference
-        const preference = this.canPlaceTerrainOn(x, y, desc)
-        const tile = this.map.get(next)
-        if (tile.terrain === desc.baseTerrain && preference !== 0) {
-          let cost = figChance(preference, x, y, desc.clumpingFactor)
-          if (desc.avoidPlayerStartAreas) {
-            cost += this.searchMapRows[y][x]
+    let done = false
+    while (!done) {
+      done = true
+      for (const clump of clumps) {
+        if (tilesPlaced < desc.tiles && (next = this.popStack(clump))) {
+          done = false
+          const { x, y } = next
+          if (desc.avoidPlayerStartAreas !== 0
+              && this.searchMapRows[y][x] > this.random.nextRange(100)) {
+            continue
           }
 
-          tile.terrain = desc.type
-          tilesPlaced += 1
+          const preference = this.canPlaceTerrainOn(x, y, desc)
+          const tile = this.map.get(next)
+          if (tile.terrain === desc.baseTerrain && preference !== 0) {
+            let cost = figChance(preference, x, y, desc.clumpingFactor)
+            if (desc.avoidPlayerStartAreas) {
+              cost += this.searchMapRows[y][x]
+            }
 
-          if (x > 0 && this.map.get({ x: x - 1, y }).terrain === desc.baseTerrain) {
-            this.pushStack(clump, x - 1, y, 0, cost + this.random.nextRange(100))
-          }
-          if (x < this.map.sizeX - 1 && this.map.get({ x: x + 1, y }).terrain === desc.baseTerrain) {
-            this.pushStack(clump, x + 1, y, 0, cost + this.random.nextRange(100))
-          }
-          if (y > 0 && this.map.get({ x, y: y - 1 }).terrain === desc.baseTerrain) {
-            this.pushStack(clump, x, y - 1, 0, cost + this.random.nextRange(100))
-          }
-          if (y < this.map.sizeY - 1 && this.map.get({ x, y: y + 1 }).terrain === desc.baseTerrain) {
-            this.pushStack(clump, x, y + 1, 0, cost + this.random.nextRange(100))
+            tile.terrain = desc.type
+
+            if (x > 0 && this.map.get({ x: x - 1, y }).terrain === desc.baseTerrain) {
+              this.pushStack(clump, x - 1, y, 0, cost + this.random.nextRange(100))
+            }
+            if (x < this.map.sizeX - 1 && this.map.get({ x: x + 1, y }).terrain === desc.baseTerrain) {
+              this.pushStack(clump, x + 1, y, 0, cost + this.random.nextRange(100))
+            }
+            if (y > 0 && this.map.get({ x, y: y - 1 }).terrain === desc.baseTerrain) {
+              this.pushStack(clump, x, y - 1, 0, cost + this.random.nextRange(100))
+            }
+            if (y < this.map.sizeY - 1 && this.map.get({ x, y: y + 1 }).terrain === desc.baseTerrain) {
+              this.pushStack(clump, x, y + 1, 0, cost + this.random.nextRange(100))
+            }
+
+            tilesPlaced += 1
           }
         }
       }
     }
   }
 
-  generateModifiers () {
+  _generateModifiers () {
     this.searchMap.fill(0)
 
     if (this.hotspots.length === 0) {
@@ -137,18 +157,18 @@ class TerrainGenerator extends Module {
 
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        // TODO Take hotspot code from src sub_00535B20
+        // TODO probably safe to remove
         this.searchMapRows[y][x] = 0
 
-        let value = 0
+        let modifier = 0
         for (const hotspot of this.hotspots) {
           const distX = Math.abs(x - hotspot.x)
           const distY = Math.abs(y - hotspot.y)
           const dist = Math.floor(hotspot.radius - Math.sqrt(distX ** 2 + distY ** 2))
-          if (dist > 0) value += dist * hotspot.fade
+          if (dist > 0) modifier += dist * hotspot.fade
         }
 
-        this.searchMapRows[y][x] = Math.min(101, value)
+        this.searchMapRows[y][x] = Math.min(101, modifier)
       }
     }
   }
@@ -256,6 +276,19 @@ class TerrainGenerator extends Module {
       this.addStackNode(stack, this.nodes[y][x])
     }
     return stack
+  }
+
+  removeArea (x, y, margin) {
+    const minX = Math.max(0, x - margin)
+    const minY = Math.max(0, y - margin)
+    const maxX = Math.min(this.map.sizeX, x + margin)
+    const maxY = Math.min(this.map.sizeY, y + margin)
+
+    for (const node of this.nodes) {
+      if (node.x >= minX && node.x < maxX && node.y >= minY && node.y <= maxY) {
+        this.removeStackNode(node)
+      }
+    }
   }
 }
 

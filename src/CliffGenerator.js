@@ -2,23 +2,22 @@ const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
 class CliffGenerator extends Module {
-  constructor (map, parent, cliffs) {
+  constructor (map, parent, cliffs, hotspots) {
     super(map, parent, true)
     this.info = cliffs
+    this.hotspots = hotspots
     this.validCliffSites = null
-
-    console.log('CliffGenerator', this.info)
 
     this.schedule = 1.75
   }
 
   generate () {
-    const { numberOfCliffs } = this.info
+    const { minNumber, maxNumber } = this.info
 
     console.log('setupCliffMaps')
     this.setupCliffMaps()
-    this.random.next() // src does this
 
+    const numberOfCliffs = minNumber + this.random.nextRange(maxNumber - minNumber)
     console.log('generateCliffs', numberOfCliffs)
     for (let i = 0; i < numberOfCliffs; i += 1) {
       this.generateCliff()
@@ -26,8 +25,8 @@ class CliffGenerator extends Module {
   }
 
   generateCliff () {
-    const { averageCliffSize, cliffSizeVariance, cliffToCliffSpacing } = this.info
-    const size = averageCliffSize - cliffSizeVariance + this.random.nextRange(2 * cliffSizeVariance)
+    const { minLength, maxLength, minDistanceBetweenCliffs, curliness } = this.info
+    const size = minLength + this.random.nextRange(maxLength - minLength)
     if (this.validCliffSites.length === 0 || size < 3) return
 
     const cliffStack = new StackNode()
@@ -50,10 +49,10 @@ class CliffGenerator extends Module {
     let direction = this.random.nextRange(4)
     for (let i = 0; i < size; i += 1) {
       const r = this.random.nextRange(100)
-      if (r < 18) {
+      if (r < curliness / 2) {
         direction -= 1
         if (direction < 0) direction += 4
-      } else if (r < 36) {
+      } else if (r < curliness) {
         direction += 1
         if (direction > 3) direction -= 4
       }
@@ -83,11 +82,12 @@ class CliffGenerator extends Module {
 
       prevX = node.x
       prevY = node.y
-      this.invalidateArea(node.x, node.y, cliffToCliffSpacing)
+      this.invalidateArea(node.x, node.y, minDistanceBetweenCliffs)
     }
   }
 
   setupCliffMaps () {
+    const { minDistanceToTerrain } = this.info
     const width = Math.floor(this.map.sizeX / 3)
     const height = Math.floor(this.map.sizeY / 3)
 
@@ -132,7 +132,7 @@ class CliffGenerator extends Module {
           }
         } else {
            if (isWaterArea) {
-             this.invalidateArea(x, y, this.info.cliffTerrainSpacing)
+             this.invalidateArea(x, y, minDistanceToTerrain)
            }
           this.searchMapRows[y][x] = 0
         }

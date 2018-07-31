@@ -3,6 +3,8 @@ const terrainColors = require('./terrainColors.json')
 const unitColors = require('./unitColors.json')
 const pngjs = require('pngjs')
 
+const { floor, sqrt } = Math
+
 class Tile {
   constructor () {
     this.type = 0 // Probably slope?
@@ -10,6 +12,10 @@ class Tile {
     this.elevation = 0
     this.object = null
   }
+}
+
+function reverseDirection (d) {
+  return (d + 2) % 4
 }
 
 class Map {
@@ -150,6 +156,10 @@ class Map {
     }
   }
 
+  cleanElevation () {
+    // TODO
+  }
+
   setTerrainAbsolute (world, x, y, terrain) {
     this.get_(x, y).terrain = terrain
   }
@@ -157,7 +167,7 @@ class Map {
   setTerrain (world, x, y, terrain) {
     // TODO
     // (this method should be able to clear objects and fix edges)
-    this.setTerrain(world, x, y, terrain)
+    this.setTerrainAbsolute(world, x, y, terrain)
   }
 
   doTerrainBrush (x, y, size, terrain) {
@@ -184,16 +194,101 @@ class Map {
     
     let x = x0
     let y = y0
-    this.doTerrainBrush(x0, y0, brushSize / 2, terrain)
+    this.doTerrainBrush(x0, y0, floor(brushSize / 2), terrain)
 
-    for (let d = Math.sqrt(dx ** 2 + dy ** 2); d > 0; d -= 1) {
+    for (let d = sqrt(dx ** 2 + dy ** 2); d > 0; d -= 1) {
       x += dx / d
       y += dy / d
-      this.doTerrainBrush(x, y, brushSize / 2, terrain)
+      this.doTerrainBrush(floor(x), floor(y), floor(brushSize / 2), terrain)
     }
 
     if (x !== x1 || y !== y1) {
-      this.doTerrainBrush(x1, y1, brushSize / 2, terrain)
+      this.doTerrainBrush(x1, y1, floor(brushSize / 2), terrain)
+    }
+  }
+
+  addCliffEdge (x, y, direction, facing, saveDirection) {
+    // TODO
+  }
+
+  doCliffBrush (x, y, cliffId, deleteCliff) {
+    this.safeCliffX = floor(x / 3)
+    this.safeCliffY = floor(y / 3)
+    if (this.oldCliffX === this.safeCliffX && this.oldCliffY === this.safeCliffY
+        || 3 * this.safeCliffX + 2 >= this.sizeX
+        || 3 * this.safeCliffY + 2 >= this.sizeY
+        || this.safeCliffX < 0
+        || this.safeCliffY < 0
+    ) {
+      return false
+    }
+
+    let cliffX = this.safeCliffX
+    let cliffY = this.safeCliffY
+    if (this.oldCliffX !== -1 && this.oldCliffY !== -1) {
+      const dx = x - 3 * this.oldCliffX
+      const dy = y - 3 * this.oldCliffY
+      let valid = false
+      if (dx >= 3 || dx <= -1) {
+        safeCliffY = this.oldCliffY
+        valid = true
+      }
+      if (dy >= 3 || dy <= -1) {
+        safeCliffX = this.oldCliffX
+        valid = true
+      }
+      if (!valid) return false
+    }
+
+    if (safeCliffX === this.oldCliffX && safeCliffY === this.oldCliffY) {
+      return true
+    }
+
+    if (deleteCliff) {
+      return true
+    }
+
+    if (this.oldCliffX === -1) {
+      this.oldCliffDirection = -1
+      this.oldCliffX = safeCliffX
+      this.oldCliffY = safeCliffY
+      return true
+    }
+
+    const direction = this.oldCliffX === safeCliffX
+      ? (this.oldCliffY < safeCliffY ? 1 : 3)
+      : (this.oldCliffX < safeCliffX ? 0 : 2)
+
+    const unk = this.addCliffEdge(this.oldCliffX, this.oldCliffY, direction, 0, this.oldCliffDirection)
+    const otherDirection = reverseDirection(direction)
+    this.oldCliffDirection = otherDirection
+    this.oldCliffX = safeCliffX
+    this.oldCliffY = safeCliffY
+    this.addCliffEdge(safeCliffX, safeCliffY, otherDirection, unk, -1)
+    return true
+  }
+
+  doCliffBrushStroke (x0, y0, x1, y1, cliffId, deleteCliff) {
+    if (x0 < 0) x0 = 0
+    if (y0 < 0) y0 = 0
+    if (x1 >= this.sizeX) x1 = this.sizeX - 1
+    if (y1 >= this.sizeY) y1 = this.sizeY - 1
+
+    const dx = x1 - x0
+    const dy = y1 - y0
+
+    let x = x0
+    let y = y0
+    this.doCliffBrush(x0, y0, cliffId, deleteCliff)
+
+    for (let d = sqrt(dx ** 2 + dy ** 2); d > 0; d -= 1) {
+      x += dx / d
+      y += dy / d
+      this.doCliffBrush(floor(x), floor(y), cliffId, deleteCliff)
+    }
+
+    if (x !== x1 || y !== y1) {
+      this.doCliffBrush(x1, y1, cliffId, deleteCliff)
     }
   }
 

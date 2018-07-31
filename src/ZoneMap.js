@@ -1,5 +1,3 @@
-const Yallist = require('yallist')
-
 module.exports = class ZoneMap {
   constructor (map, terrainRules) {
     this.map = map
@@ -13,7 +11,6 @@ module.exports = class ZoneMap {
 
     this.zoneInfo = new Int8Array(255).fill(-1)
     this._sizeCache = new Int32Array(255)
-    this._zoneQueue = null
 
     this.doZoneMap()
   }
@@ -59,7 +56,7 @@ module.exports = class ZoneMap {
    *
    */
   doZoneMapArea (x, y, group, zone) {
-    const zoneQueue = Yallist.create()
+    const zoneQueue = []
 
     let node
     do {

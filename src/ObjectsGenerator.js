@@ -1,5 +1,5 @@
 const Module = require('./Module.js')
-const MapStack = require('./MapStack.js')
+const StackNode = require('./StackNode.js')
 
 function toObjectPosition (tile) {
   return {
@@ -83,7 +83,7 @@ class ObjectsGenerator extends Module {
 
     let placedGroups = 0
     let tile
-    while ((tile = positions.pop()) && placedGroups < numberOfGroups) {
+    while ((tile = this.popStack(positions)) && placedGroups < numberOfGroups) {
       if (!this._checkRestrictions(tile, maxDistanceToOtherZones, Math.floor(maxDistanceToOtherZones * 10 / 14))) {
         continue
       }
@@ -184,7 +184,7 @@ class ObjectsGenerator extends Module {
   generatePositions (position, minDistance, maxDistance) {
     console.log('generating', position, minDistance, maxDistance)
     // TODO Correct implementation with min and max distance
-    const stack = new MapStack()
+    const stack = new StackNode()
     const size = this.map.sizeX * this.map.sizeY
 
     const minX = maxDistance < 0 ? 0 : Math.max(0, position.x - maxDistance)
@@ -198,7 +198,7 @@ class ObjectsGenerator extends Module {
     for (let y = minY; y < maxY; y++) {
       for (let x = minX; x < maxX; x++) {
         if (this.searchMapRows[y][x] !== 0) {
-          stack.push(this.nodes[y][x])
+          this.addStackNode(stack, this.nodes[y][x])
         }
       }
     }
@@ -209,11 +209,11 @@ class ObjectsGenerator extends Module {
       const y = minY + this.random.nextRange(diffY - 1)
 
       if (this.searchMapRows[y][x] !== 0) {
-        stack.push(this.nodes[y][x])
+        this.addStackNode(stack, this.nodes[y][x])
       }
     }
 
-    console.log('generated', stack.length)
+    console.log('generated', stack.size())
     return stack
   }
 
@@ -227,7 +227,7 @@ class ObjectsGenerator extends Module {
 
     let toPlace = Math.max(1, (Math.random() * desc.groupVariance * 2) + desc.amount - desc.groupVariance)
     let next
-    while ((next = stack.pop()) && toPlace > 0) {
+    while ((next = this.popStack(stack)) && toPlace > 0) {
       const { terrain } = this.map.get(next)
       if (desc.baseTerrain !== -1 && this.map.get(tile).terrain !== desc.baseTerrain) {
         continue
@@ -242,18 +242,18 @@ class ObjectsGenerator extends Module {
   }
 
   placeTightGroup (desc, { x, y }, playerId) {
-    const stack = new MapStack()
-    stack.add(this.nodes[y][x])
+    const stack = new StackNode()
+    this.addStackNode(stack, this.nodes[y][x])
 
     let toPlace = Math.max(1, (Math.random() * desc.groupVariance * 2) + desc.amount - desc.groupVariance)
     let next
-    while ((next = stack.pop()) && toPlace > 0) {
+    while ((next = this.popStack(stack)) && toPlace > 0) {
       this.searchMapRows[next.y][next.x] = 0
 
-      if (next.x > 0) stack.add(next.x - 1, next.y, 0, this.random.next())
-      if (next.x < this.map.sizeX - 1) stack.add(next.x + 1, next.y, 0, this.random.next())
-      if (next.y > 0) stack.add(next.x, next.y - 1, 0, this.random.next())
-      if (next.y < this.map.sizeY - 1) stack.add(next.x, next.y + 1, 0, this.random.next())
+      if (next.x > 0) this.pushStack(stack, next.x - 1, next.y, 0, this.random.next())
+      if (next.x < this.map.sizeX - 1) this.pushStack(stack, next.x + 1, next.y, 0, this.random.next())
+      if (next.y > 0) this.pushStack(stack, next.x, next.y - 1, 0, this.random.next())
+      if (next.y < this.map.sizeY - 1) this.pushStack(stack, next.x, next.y + 1, 0, this.random.next())
 
       this.map.place(next, {
         type: desc.type,
@@ -269,7 +269,7 @@ class ObjectsGenerator extends Module {
     const maxX = Math.min(this.map.sizeX, x + margin)
     const maxY = Math.min(this.map.sizeY, y + margin)
 
-    return tiles.filter((tile) =>
+    return this.filterStack(tiles, (tile) =>
       tile.x >= minX && tile.x < maxX && tile.y >= minY && tile.y < maxY)
   }
 

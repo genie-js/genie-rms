@@ -1,5 +1,5 @@
 const Module = require('./Module.js')
-const MapStack = require('./MapStack.js')
+const StackNode = require('./StackNode.js')
 
 class TerrainGenerator extends Module {
   constructor (map, parent, terrains, hotspots = []) {
@@ -64,7 +64,7 @@ class TerrainGenerator extends Module {
 
     const clumps = []
     for (let i = 0; i < numberOfClumps; i++) {
-      clumps.push(new MapStack())
+      clumps.push(new StackNode())
     }
 
     const stack = this.linkStackRandomly()
@@ -73,7 +73,7 @@ class TerrainGenerator extends Module {
     let tilesPlaced = 0
     let next
 
-    while (clumpIndex < desc.numberOfClumps && (next = stack.pop())) {
+    while (clumpIndex < desc.numberOfClumps && (next = this.popStack(stack))) {
       const tile = this.map.get(next)
       const { x, y } = next
       if (tile.terrain === desc.baseTerrain) {
@@ -81,10 +81,10 @@ class TerrainGenerator extends Module {
           if (!desc.avoidPlayerStartAreas || !this.searchMapRows[y][x]) {
             tile.terrain = desc.type
             const clump = clumps[clumpIndex]
-            if (next.x > 0) clump.add(next.x - 1, next.y, 0, 0)
-            if (next.x < this.map.sizeX - 1) clump.add(next.x + 1, next.y, 0, 0)
-            if (next.y > 0) clump.add(next.x, next.y - 1, 0, 0)
-            if (next.y < this.map.sizeY - 1) clump.add(next.x, next.y + 1, 0, 0)
+            if (next.x > 0) this.pushStack(clump, next.x - 1, next.y, 0, 0)
+            if (next.x < this.map.sizeX - 1) this.pushStack(clump, next.x + 1, next.y, 0, 0)
+            if (next.y > 0) this.pushStack(clump, next.x, next.y - 1, 0, 0)
+            if (next.y < this.map.sizeY - 1) this.pushStack(clump, next.x, next.y + 1, 0, 0)
             tilesPlaced += 1
             clumpIndex += 1
           }
@@ -93,7 +93,7 @@ class TerrainGenerator extends Module {
     }
 
     for (const clump of clumps) {
-      while (tilesPlaced < desc.tiles && (next = clump.pop())) {
+      while (tilesPlaced < desc.tiles && (next = this.popStack(clump))) {
         const { x, y } = next
         if (this.searchMapRows[y][x] > this.random.nextRange(100)) {
           continue
@@ -112,16 +112,16 @@ class TerrainGenerator extends Module {
           tilesPlaced += 1
 
           if (x > 0 && this.map.get({ x: x - 1, y }).terrain === desc.baseTerrain) {
-            clump.add(x - 1, y, 0, cost + this.random.nextRange(100))
+            this.pushStack(clump, x - 1, y, 0, cost + this.random.nextRange(100))
           }
           if (x < this.map.sizeX - 1 && this.map.get({ x: x + 1, y }).terrain === desc.baseTerrain) {
-            clump.add(x + 1, y, 0, cost + this.random.nextRange(100))
+            this.pushStack(clump, x + 1, y, 0, cost + this.random.nextRange(100))
           }
           if (y > 0 && this.map.get({ x, y: y - 1 }).terrain === desc.baseTerrain) {
-            clump.add(x, y - 1, 0, cost + this.random.nextRange(100))
+            this.pushStack(clump, x, y - 1, 0, cost + this.random.nextRange(100))
           }
           if (y < this.map.sizeY - 1 && this.map.get({ x, y: y + 1 }).terrain === desc.baseTerrain) {
-            clump.add(x, y + 1, 0, cost + this.random.nextRange(100))
+            this.pushStack(clump, x, y + 1, 0, cost + this.random.nextRange(100))
           }
         }
       }
@@ -242,10 +242,10 @@ class TerrainGenerator extends Module {
   }
 
   linkStackRandomly () {
-    const stack = new MapStack()
+    const stack = new StackNode()
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        stack.push(this.nodes[y][x])
+        this.addStackNode(stack, this.nodes[y][x])
       }
     }
 
@@ -253,7 +253,7 @@ class TerrainGenerator extends Module {
     for (let i = 0; i < size; i++) {
       const y = this.random.nextRange(this.map.sizeY - 1)
       const x = this.random.nextRange(this.map.sizeX - 1)
-      stack.push(this.nodes[y][x])
+      this.addStackNode(stack, this.nodes[y][x])
     }
     return stack
   }

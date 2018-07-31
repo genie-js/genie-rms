@@ -1,5 +1,5 @@
 const Module = require('./Module.js')
-const MapStack = require('./MapStack.js')
+const StackNode = require('./StackNode.js')
 
 class ElevationGenerator extends Module {
   constructor (map, parent, elevations, hotspots) {
@@ -56,7 +56,7 @@ class ElevationGenerator extends Module {
 
     const clumps = []
     for (let i = 0; i < numberOfClumps; i++) {
-      clumps.push(new MapStack())
+      clumps.push(new StackNode())
     }
 
     const mainStack = this.findTiles(baseTerrain, baseElevation)
@@ -69,27 +69,28 @@ class ElevationGenerator extends Module {
         const tile = this.map.get({ x, y })
         tile.elevation = height
 
-        if (node.x > 0) clump.add(node.x - 1, node.y, 0, 0)
-        if (node.y > 0) clump.add(node.x, node.y - 1, 0, 0)
-        if (node.x < this.map.sizeX - 1) clump.add(node.x + 1, node.y, 0, 0)
-        if (node.y < this.map.sizeY - 1) clump.add(node.x, node.y + 1, 0, 0)
+        if (node.x > 0) this.pushStack(clump, node.x - 1, node.y, 0, 0)
+        if (node.y > 0) this.pushStack(clump, node.x, node.y - 1, 0, 0)
+        if (node.x < this.map.sizeX - 1) this.pushStack(clump, node.x + 1, node.y, 0, 0)
+        if (node.y < this.map.sizeY - 1) this.pushStack(clump, node.x, node.y + 1, 0, 0)
       }
     }
   }
 
   findTiles (baseTerrain, baseElevation) {
-    const stack = new MapStack()
+    const stack = new StackNode()
 
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
         const tile = this.map.get({ x, y })
         if (tile.terrain === baseTerrain && tile.elevation === baseElevation && this.searchMapRows[y][x] === 0) {
-          stack.add(this.nodes[y][x])
+          this.addStackNode(stack, this.nodes[y][x])
         }
       }
     }
 
-    return stack.randomize()
+    this.randomizeStack(stack)
+    return stack
   }
 }
 

@@ -4,20 +4,11 @@ const unitColors = require('./unitColors.json')
 const pngjs = require('pngjs')
 
 class Tile {
-  constructor (terrain, elevation) {
+  constructor () {
     this.type = 0 // Probably slope?
-    this.terrain = terrain
-    this.elevation = elevation
-
+    this.terrain = 0
+    this.elevation = 0
     this.object = null
-  }
-
-  place (object) {
-    if (this.object) {
-      // throw new Error('Cannot place multiple objects on one tile')
-      console.warn('Cannot place multiple objects on one tile')
-    }
-    this.object = object
   }
 }
 
@@ -30,7 +21,7 @@ class Map {
     while (this.terrain.length < this.sizeY) {
       const row = []
       while (row.length < this.sizeX) {
-        row.push(new Tile(0, 0))
+        row.push(new Tile())
       }
       this.terrain.push(row)
     }
@@ -45,9 +36,11 @@ class Map {
     return this.terrain[y][x]
   }
 
-  place (tile, unit) {
-    console.log('placing', unit, 'on', tile)
-    this.get(tile).place(unit)
+  place (coords, unit) {
+    console.log('placing', unit, 'on', coords)
+    const tile = this.get(coords)
+    if (tile.object) throw new Error('Tried placing an object on a tile that already has an object')
+    tile.place(unit)
   }
 
   cleanTerrain (minX, minY, maxX, maxY, terrain) {
@@ -159,6 +152,49 @@ class Map {
 
   setTerrainAbsolute (world, x, y, terrain) {
     this.get_(x, y).terrain = terrain
+  }
+
+  setTerrain (world, x, y, terrain) {
+    // TODO
+    // (this method should be able to clear objects and fix edges)
+    this.setTerrain(world, x, y, terrain)
+  }
+
+  doTerrainBrush (x, y, size, terrain) {
+    const minX = Math.max(0, x - size)
+    const minY = Math.max(0, y - size)
+    const maxX = Math.min(this.sizeX - 1, x + size)
+    const maxY = Math.min(this.sizeY - 1, y + size)
+
+    for (let cx = minX; cx < maxX; cx += 1) {
+      for (let cy = minY; cy < maxY; cy += 1) {
+        this.setTerrain(null, cx, cy, terrain, 0, 0)
+      }
+    }
+  }
+
+  doTerrainBrushStroke (x0, y0, x1, y1, brushSize, terrain) {
+    if (x0 < 0) x0 = 0
+    if (y0 < 0) y0 = 0
+    if (x1 >= this.sizeX) x1 = this.sizeX - 1
+    if (y1 >= this.sizeY) y1 = this.sizeY - 1
+
+    const dx = x1 - x0
+    const dy = y1 - y0
+    
+    let x = x0
+    let y = y0
+    this.doTerrainBrush(x0, y0, brushSize / 2, terrain)
+
+    for (let d = Math.sqrt(dx ** 2 + dy ** 2); d > 0; d -= 1) {
+      x += dx / d
+      y += dy / d
+      this.doTerrainBrush(x, y, brushSize / 2, terrain)
+    }
+
+    if (x !== x1 || y !== y1) {
+      this.doTerrainBrush(x1, y1, brushSize / 2, terrain)
+    }
   }
 
   render () {

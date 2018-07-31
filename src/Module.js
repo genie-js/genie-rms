@@ -1,5 +1,5 @@
 const bySchedule = require('sort-by')('schedule')
-const MapStack = require('./MapStack.js')
+const StackNode = require('./StackNode.js')
 
 class Module {
   constructor (map, parent, resourcesNeeded) {
@@ -25,6 +25,7 @@ class Module {
     this.modules.sort(bySchedule)
 
     for (const child of this.modules) {
+      console.log(child.constructor.name, 'start')
       console.time(child.constructor.name)
       child.generate()
       console.timeEnd(child.constructor.name)
@@ -48,7 +49,10 @@ class Module {
       this.searchMapRows.push(this.searchMap.subarray(this.map.sizeX * y, this.map.sizeX * (y + 1)))
       const nodeRow = []
       for (let x = 0; x < this.map.sizeX; x++) {
-        nodeRow.push(new MapStack.Node(x, y))
+        const node = new StackNode()
+        node.x = x
+        node.y = y
+        nodeRow.push(node)
       }
       this.nodes.push(nodeRow)
     }
@@ -83,6 +87,103 @@ class Module {
       searchMapRows: this.searchMapRows,
       nodes: this.nodes,
     }
+  }
+
+  getStackNode (x, y) {
+    return this.nodes[y][x]
+  }
+
+  initStack (stack) {
+    // NOOP
+  }
+
+  deinitStack (stack) {
+    stack.deinit()
+  }
+
+  pushStack (stack, x, y, cost, totalCost) {
+    const node = this.getStackNode(x, y)
+    this.removeStackNode(node)
+
+    let insertAfter = stack
+    while (insertAfter.next && insertAfter.next.totalCost < totalCost) {
+      insertAfter = insertAfter.next
+    }
+
+    this.addStackNode(insertAfter, node)
+    node.cost = cost
+    node.totalCost = totalCost
+  }
+
+  popStack (stack) {
+    if (!stack.next) return null
+    const node = stack.next
+    this.removeStackNode(node)
+    return node
+  }
+
+  addStackNode (stack, node) {
+    if (node.next || node.prev) {
+      this.removeStackNode(node)
+    }
+    node.prev = stack
+    node.next = stack.next
+    if (node.next) node.next.prev = node
+    stack.next = node
+  }
+
+  removeStackNode (node) {
+    if (node.prev) node.prev.next = node.next
+    if (node.next) node.next.prev = node.prev
+    node.prev = null
+    node.next = null
+  }
+
+  clearStack () {
+    for (let y = 0; y < this.map.sizeY; y += 1) {
+      for (let x = 0; x < this.map.sizeX; x += 1) {
+        this.nodes[y][x].cost = 0
+        this.nodes[y][x].totalCost = 0
+      }
+    }
+  }
+
+  randomizeStack (stack) {
+    const array = []
+    let node = stack.next
+    while (node) {
+      array.push(node)
+      node = node.next
+    }
+
+    let len = array.length
+    while (len) {
+      const rand = Math.floor(Math.random() * len)
+      len -= 1
+      const t = array[len]
+      array[len] = array[rand]
+      array[rand] = t
+    }
+
+    array.forEach((node, i) => {
+      node.prev = array[i - 1]
+      node.next = array[i + 1]
+    })
+    array[0].prev = stack
+    stack.next = array[0]
+  }
+
+  filterStack (stack, fn) {
+    let node = stack
+    let head = null
+    while (node) {
+      const next = node.next
+      if (!fn(node)) this.removeStackNode(node)
+      else if (!head) head = node
+
+      node = next
+    }
+    return head
   }
 
   findPath () {

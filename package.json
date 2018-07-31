@@ -16,8 +16,7 @@
   "dependencies": {
     "awestruct": "^0.12.3",
     "pngjs": "^3.3.2",
-    "sort-by": "^1.2.0",
-    "yallist": "^3.0.2"
+    "sort-by": "^1.2.0"
   },
   "devDependencies": {
     "brfs": "^1.4.3",

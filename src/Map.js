@@ -335,7 +335,7 @@ class Map {
         width: this.sizeX,
         height: this.sizeY
       })
-      png.data = Buffer.from(imageData)
+      png.data = global.Buffer.from(imageData)
 
       return png.pack()
     }

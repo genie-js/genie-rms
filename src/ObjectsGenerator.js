@@ -236,7 +236,7 @@ class ObjectsGenerator extends Module {
     let next
     while ((next = this.popStack(stack)) && toPlace > 0) {
       const { terrain } = this.map.get(next)
-      if (desc.baseTerrain !== -1 && this.map.get(tile).terrain !== desc.baseTerrain) {
+      if (desc.baseTerrain !== -1 && terrain !== desc.baseTerrain) {
         continue
       }
 

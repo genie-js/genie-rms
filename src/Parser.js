@@ -39,10 +39,12 @@ const ARGTYPE_TOKEN = 3
 const ARGTYPE_TOKEN2 = 4
 const ARGTYPE_FILE = 5
 
+const RANDOM_STATE_DEAD = -1
 const RANDOM_STATE_PRE = 1
 const RANDOM_STATE_MATCH = 2
 const RANDOM_STATE_POST = 3
 
+const IF_STATE_DEAD = -1
 const IF_STATE_FAIL = 1
 const IF_STATE_MATCH = 2
 const IF_STATE_DONE = 3
@@ -74,10 +76,7 @@ class Parser {
     }
 
     this.commentDepth = 0
-    // TODO also use a randomStack, like ifStack?
-    // src does not seem to use it, not sure if randoms can be nested.
-    this.randomDepth = 0
-    this.randomState = 0
+    this.randomStack = []
     this.ifStack = []
     this.parseState = []
 
@@ -316,6 +315,42 @@ class Parser {
     this.ifStack[this.ifStack.length - 1] = value
   }
 
+  /**
+   * Get the current randomState, from the top of the stack.
+   */
+  get randomState () {
+    const last = this.randomStack[this.randomStack.length - 1]
+    if (last) return last.state
+    throw this.error('Attempted to get `randomState`, but stack is empty')
+  }
+
+  /**
+   * Set the current randomState, at the top of the stack.
+   */
+  set randomState (value) {
+    const last = this.randomStack[this.randomStack.length - 1]
+    if (!last) throw this.error('Attempted to set `randomState`, but stack is empty')
+    last.state = value
+  }
+  /**
+   * Get the current randomValue, from the top of the stack.
+   */
+  get randomValue () {
+    const last = this.randomStack[this.randomStack.length - 1]
+    if (last) return last.value
+    throw this.error('Attempted to get `randomValue`, but stack is empty')
+  }
+
+  /**
+   * Set the current randomValue, at the top of the stack.
+   */
+  set randomValue (value) {
+    const last = this.randomStack[this.randomStack.length - 1]
+    if (!last) throw this.error('Attempted to set `randomValue`, but stack is empty')
+    last.value = value
+  }
+
+
   parseToken () {
     const token = this.currentToken
     const {
@@ -355,9 +390,17 @@ class Parser {
     if (this.ifState === IF_STATE_MATCH) {
       switch (id) {
         case TOK_START_RANDOM: // start_random
-          this.randomDepth += 1
-          this.randomValue = this.random.nextRange(100)
-          this.randomState = RANDOM_STATE_PRE
+          if (this.randomStack.length > 0 && this.randomState !== RANDOM_STATE_MATCH) {
+            this.randomStack.push({
+              value: 0,
+              state: RANDOM_STATE_DEAD
+            })
+            break
+          }
+          this.randomStack.push({
+            value: this.random.nextRange(100),
+            state: RANDOM_STATE_PRE
+          })
           break
         case TOK_PERCENT_CHANCE: // percent_chance
           if (this.randomState === RANDOM_STATE_PRE) {
@@ -369,7 +412,7 @@ class Parser {
               // Take this branch!
               this.randomState = RANDOM_STATE_MATCH
             }
-          } else {
+          } else if (this.randomState !== RANDOM_STATE_DEAD) {
             this.randomState = RANDOM_STATE_POST
           }
           break
@@ -377,27 +420,40 @@ class Parser {
           if (this.randomState === RANDOM_STATE_PRE) {
             console.warn('skipped random branch', this.line)
           }
-          this.randomDepth -= 1
+          this.randomStack.pop()
           break
       }
     }
 
-    if (this.randomDepth === 0 || this.randomState === RANDOM_STATE_MATCH) {
+    if (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH) {
       switch (id) {
-        case TOK_IF: // if
-          if (this.ifState === IF_STATE_MATCH) {
-            const [ condition ] = args
-            this.ifStack.push(condition ? IF_STATE_MATCH : IF_STATE_FAIL)
+        case TOK_IF: { // if
+          // We can only take this branch if we are already matching,
+          // but need to keep track of if block depth in order to
+          // balance nested ifs correctly.
+          if (this.ifState !== IF_STATE_MATCH) {
+            this.ifStack.push(IF_STATE_DEAD)
+            break
           }
+
+          const [ condition ] = args
+          this.ifStack.push(condition ? IF_STATE_MATCH : IF_STATE_FAIL)
+          if (condition) this.log('Entering if condition', this.ifState)
+          else this.log('Skipping if condition', this.ifState)
           break
+        }
         case TOK_ELIF: // elseif
           // FIXME this might be wrong if this `if/elseif/endif` sequence is nested
           // within an `if` statement with a failing condition, since it would be checking
           // the outer if?
           // Need to check src
-          if (this.ifStack.length > 0 && this.ifState === IF_STATE_FAIL) {
+          if (this.ifStack.length > 0) {
             const [ condition ] = args
-            this.ifState = condition ? IF_STATE_MATCH : IF_STATE_FAIL
+            if (this.ifState === IF_STATE_FAIL) {
+              this.ifState = condition ? IF_STATE_MATCH : IF_STATE_FAIL
+            } else if (this.ifState === IF_STATE_MATCH) {
+              this.ifState = IF_STATE_DONE
+            }
           }
           break
         case TOK_ELSE: // else
@@ -417,7 +473,7 @@ class Parser {
       }
     }
 
-    if (this.ifState === IF_STATE_MATCH && (this.randomDepth === 0 || this.randomState === RANDOM_STATE_MATCH)) {
+    if (this.ifState === IF_STATE_MATCH && (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH)) {
       switch (id) {
         case TOK_DEFINE: { // #define
           const [ name ] = args

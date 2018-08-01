@@ -1,3 +1,5 @@
+const chalk = require('chalk')
+const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const CRandom = require('./CRandom.js')
 const Map = require('./Map.js')
@@ -20,6 +22,7 @@ class ScriptController extends Module {
     this.random = this.options.random
       || new CRandom(Date.now())
 
+    this.logger = new Logger('controller')
     this.map = new Map()
     this.world = new World()
 
@@ -29,13 +32,16 @@ class ScriptController extends Module {
   }
 
   onWarn (err) {
-    console.warn('!!', err.message, 'at', `${err.line}:${err.column}`)
+    this.logger.warn(
+      chalk.grey(`(${err.line}:${err.column})`),
+      chalk.red(err.message)
+    )
   }
 
   generate () {
     this.parser = new Parser({
       random: this.random,
-      onWarn: this.onWarn
+      onWarn: this.onWarn.bind(this)
     })
 
     this.createSharedResources()

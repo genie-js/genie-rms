@@ -1,3 +1,5 @@
+const chalk = require('chalk')
+const Logger = require('./Logger.js')
 const Token = require('./Token.js')
 const CRandom = require('./CRandom.js')
 const defaultTokens = require('./defaultTokens.js')
@@ -62,6 +64,8 @@ class Parser {
       onWarn: (warning) => {}
     }, options)
 
+    this.logger = new Logger('parser')
+
     this.random = this.options.random || new CRandom(Date.now())
 
     this.tokenTypes = []
@@ -91,12 +95,27 @@ class Parser {
     this.cliffHotspots = []
   }
 
+  log (...args) {
+    this.logger.log(
+      chalk.grey(`(${this.line}:${this.column})`),
+      ...args
+    )
+  }
+
   warn (str) {
     const warning = new Error(str)
     warning.index = this.index
     warning.line = this.line
     warning.column = this.column
     this.options.onWarn(warning)
+  }
+
+  error (str) {
+    const err = new Error(`(${this.line}:${this.column}) ${str}`)
+    err.index = this.index
+    err.line = this.line
+    err.column = this.column
+    return err
   }
 
   /**
@@ -251,7 +270,7 @@ class Parser {
   include (file) {
     this._pushState()
     if (!this.options.include) {
-      throw new Error('#include is not supported')
+      throw this.error('#include is not supported')
     }
     this.options.include(file, (err, code) => {
       if (err) throw err
@@ -346,6 +365,7 @@ class Parser {
             if (this.randomValue > percent) {
               this.randomValue -= percent
             } else {
+              this.log(`Entering percent_chance: ${percent}%`)
               // Take this branch!
               this.randomState = RANDOM_STATE_MATCH
             }
@@ -401,24 +421,26 @@ class Parser {
       switch (id) {
         case TOK_DEFINE: { // #define
           const [ name ] = args
+          this.log('Defining constant', chalk.cyan(name))
           this.defineUserToken(name, TOKEN_TYPE_DEFINE, 0,
             [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
           break
         }
         case TOK_CONST: { // #const
           const [ name, value ] = args
+          this.log('Defining constant', chalk.cyan(name), value)
           this.defineUserToken(name, TOKEN_TYPE_CONST, value,
             [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
           break
         }
         case TOK_INCLUDE: // #include
-          throw new Error('#include is not supported')
+          throw this.error('#include is not supported')
         case TOK_INCLUDE_DRS: { // #include_drs
           const [ name, id] = args
           if (id in hardcodedDrsIncludes) {
             this.includeCode(hardcodedDrsIncludes[id])
           } else {
-            throw new Error('#include_drs is not supported')
+            throw this.error('#include_drs is not supported')
           }
           break
         }
@@ -454,9 +476,9 @@ class Parser {
   }
 
   parsePlayerSetup (token) {
-    const { id } = token
+    const { id, name } = token
     if (id < 12 || id > 16) {
-      throw new Error('Unknown token in <PLAYER_SETUP> section')
+      throw this.error(`Unknown token in <PLAYER_SETUP> section: ${name}`)
     }
   }
 

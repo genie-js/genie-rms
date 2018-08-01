@@ -149,6 +149,7 @@ class ObjectsGenerator extends Module {
     const coreZone = this.zoneMap.getZoneInfo(x, y)
     let next
     while (groupsLeft > 0 && (next = this.popStack(positions))) {
+      if (desc.type === 109) this.logger.log('place town center?', next)
       if (this._tooClose(desc, next.x, next.y)) {
         continue
       }
@@ -162,7 +163,7 @@ class ObjectsGenerator extends Module {
         continue
       }
 
-      if (false) {
+      if (desc.groupingType === 0 && positions.next === null) {
         this.map.place(next, {
           type: desc.type,
           player: playerId
@@ -197,21 +198,21 @@ class ObjectsGenerator extends Module {
 
     const minX = maxDistance < 0 ? 0 : Math.max(0, position.x - maxDistance)
     const minY = maxDistance < 0 ? 0 : Math.max(0, position.y - maxDistance)
-    const maxX = maxDistance < 0 ? this.map.sizeX : Math.min(this.map.sizeX, position.x + maxDistance)
-    const maxY = maxDistance < 0 ? this.map.sizeY : Math.min(this.map.sizeY, position.y + maxDistance)
+    const maxX = maxDistance < 0 ? this.map.sizeX - 1 : Math.min(this.map.sizeX - 1, position.x + maxDistance)
+    const maxY = maxDistance < 0 ? this.map.sizeY - 1 : Math.min(this.map.sizeY - 1, position.y + maxDistance)
 
     const diffX = maxX - minX
     const diffY = maxY - minY
 
-    console.time('prepareStack')
-    for (let y = minY; y < maxY; y++) {
-      for (let x = minX; x < maxX; x++) {
+    this.logger.time('prepareStack')
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
         if (this.searchMapRows[y][x] !== 0) {
           this.addStackNode(stack, this.nodes[y][x])
         }
       }
     }
-    console.timeEnd('prepareStack')
+    this.logger.timeEnd('prepareStack')
 
     let toGo = floor(diffX * diffY / 4)
     this.logger.log('randomizeStack', toGo)

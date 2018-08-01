@@ -312,6 +312,7 @@ class Map {
 
   render () {
     const imageData = new Uint8Array(this.sizeX * this.sizeY * 4)
+    const centers = []
     for (let y = 0; y < this.sizeY; y++) {
       for (let x = 0; x < this.sizeX; x++) {
         const tile = this.get_(x, y)
@@ -322,6 +323,7 @@ class Map {
         }
         if (tile.object && playerColors[tile.object.player]) {
           color = playerColors[tile.object.player]
+          if (tile.object.type === 109) centers.push({ x, y, player: tile.object.player })
         }
 
         color = color
@@ -336,6 +338,28 @@ class Map {
         imageData[b + 3] = 0xFF
       }
     }
+
+    centers.forEach((tile) => {
+      const color = playerColors[tile.player]
+        .match(/^#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})$/i)
+        .slice(1)
+        .map((c) => parseInt(c, 16))
+
+      const pts = [
+        [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2],
+        [-1, -2], [-1, 2],
+        [0, -2], [0, 2],
+        [1, -2], [1, 2],
+        [2, -2], [2, -1], [2, 0], [2, 1], [2, 2],
+      ]
+      for (const [x, y] of pts) {
+        const b = (this.sizeX * (tile.y + y) + (tile.x + x)) * 4
+        imageData[b + 0] = color[0]
+        imageData[b + 1] = color[1]
+        imageData[b + 2] = color[2]
+        imageData[b + 3] = 0xFF
+      }
+    })
 
     if (pngjs) {
       const png = new pngjs.PNG({

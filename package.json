@@ -15,6 +15,7 @@
   "main": "lib/RMS",
   "dependencies": {
     "awestruct": "^0.12.3",
+    "chalk": "^2.4.1",
     "pngjs": "^3.3.2",
     "sort-by": "^1.2.0"
   },
@@ -23,7 +24,9 @@
     "buble": "^0.15.2"
   },
   "scripts": {
+    "build:lres": "brfs src/landResources.js > lib/landResources.js",
     "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
-    "build": "buble src --output lib -y dangerousForOf -m && npm run build:rmdef"
+    "build:json": "cp src/*.json lib/",
+    "build": "buble src --output lib -y dangerousForOf -m && npm run build:json && npm run build:lres && npm run build:rmdef"
   }
 }

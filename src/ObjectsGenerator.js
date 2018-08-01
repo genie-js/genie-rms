@@ -1,3 +1,4 @@
+const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
@@ -22,6 +23,7 @@ class ObjectsGenerator extends Module {
 
     this.schedule = 3.0
 
+    this.logger = new Logger('objects')
     this.random = parent.random
   }
 
@@ -53,7 +55,7 @@ class ObjectsGenerator extends Module {
     }
     desc.numberOfGroups = floor(desc.numberOfGroups)
 
-    console.log('generateObject', desc.type, landId)
+    this.logger.log('generateObject', desc.type, landId)
     if (landId < 0) {
       if (landId === -1) {
         this.placeObjects(desc)
@@ -77,6 +79,8 @@ class ObjectsGenerator extends Module {
       type
     } = desc
     const { mapZones } = this.map
+
+    this.logger.log('placeObjects', type)
 
     let positions = this.generatePositions(-1, -1, -1)
 
@@ -116,6 +120,7 @@ class ObjectsGenerator extends Module {
   }
 
   placeAvoidObjects (desc, distance) {
+    this.logger.log('placeAvoidObjects', desc.type)
   }
 
   placeLandObjects (desc, x, y, minDistanceToPlayers, maxDistanceToPlayers, i) {
@@ -126,7 +131,7 @@ class ObjectsGenerator extends Module {
         ? this.hotspots[i].playerId
         : 0
 
-    console.log('placeLandObjects', playerId)
+    this.logger.log('placeLandObjects', desc.type, playerId)
 
     // TODO Change to scout if necessary
 
@@ -134,6 +139,7 @@ class ObjectsGenerator extends Module {
     this.zoneMap = this.map.mapZones.getZoneMap(terrainRules)
 
     let positions = this.generatePositions({ x, y }, minDistanceToPlayers, maxDistanceToPlayers)
+    this.logger.log('available positions for', desc.type, '=', positions.size() - 1)
 
     let groupsLeft = desc.numberOfGroups
     if (desc.type === 83 && groupsLeft === 1) {
@@ -184,7 +190,7 @@ class ObjectsGenerator extends Module {
   }
 
   generatePositions (position, minDistance, maxDistance) {
-    console.log('generating', position, minDistance, maxDistance)
+    this.logger.log('generating', position, minDistance, maxDistance)
     // TODO Correct implementation with min and max distance
     const stack = new StackNode()
     const size = this.map.sizeX * this.map.sizeY
@@ -208,8 +214,8 @@ class ObjectsGenerator extends Module {
     console.timeEnd('prepareStack')
 
     let toGo = floor(diffX * diffY / 4)
-    console.log('randomizeStack', toGo)
-    console.time('randomizeStack')
+    this.logger.log('randomizeStack', toGo)
+    this.logger.time('randomizeStack')
     while (toGo--) {
       const x = minX + this.random.nextRange(diffX - 1)
       const y = minY + this.random.nextRange(diffY - 1)
@@ -218,9 +224,9 @@ class ObjectsGenerator extends Module {
         this.addStackNode(stack, this.nodes[y][x])
       }
     }
-    console.timeEnd('randomizeStack')
+    this.logger.timeEnd('randomizeStack')
 
-    console.log('generated', stack.size())
+    this.logger.log('generated', stack.size())
     return stack
   }
 

@@ -418,7 +418,7 @@ class Parser {
           break
         case TOK_END_RANDOM: // end_random
           if (this.randomState === RANDOM_STATE_PRE) {
-            console.warn('skipped random branch', this.line)
+            this.warn('Non-exhaustive random branch')
           }
           this.randomStack.pop()
           break

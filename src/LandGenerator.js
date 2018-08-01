@@ -4,7 +4,6 @@ const StackNode = require('./StackNode.js')
 class LandGenerator extends Module {
   constructor (map, parent, lands) {
     super(map, parent, true)
-    console.log('LandGenerator', lands)
     this.lands = lands
 
     this.schedule = 1.0

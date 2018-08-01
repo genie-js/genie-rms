@@ -1,3 +1,5 @@
+const chalk = require('chalk')
+const Logger = require('./Logger.js')
 const ZoneMapList = require('./ZoneMapList.js')
 const terrainColors = require('./terrainColors.json')
 const unitColors = require('./unitColors.json')
@@ -43,6 +45,7 @@ class Map {
       this.terrain.push(row)
     }
 
+    this.logger = new Logger('map')
     this.mapZones = new ZoneMapList(this)
   }
 
@@ -54,9 +57,13 @@ class Map {
   }
 
   place (coords, unit) {
-    console.log('placing', unit, 'on', coords)
+    this.logger.log('placing', unit, 'on', coords)
     const tile = this.get(coords)
-    if (tile.object) return console.warn('!! Tried placing an object on a tile that already has an object')
+    if (tile.object) {
+      const { x, y } = coords
+      this.logger.warn(chalk.red(`Tried placing an object on a tile that already has an object (${x},${y})`))
+      return
+    }
     tile.object = unit
   }
 
@@ -66,7 +73,7 @@ class Map {
     if (maxX >= this.sizeX) maxX = this.sizeX - 1
     if (maxY >= this.sizeY) maxY = this.sizeY - 1
 
-    console.log('cleanTerrain', { minX, minY, maxX, maxY, terrain })
+    this.logger.log('cleanTerrain', { minX, minY, maxX, maxY, terrain })
     const world = null
 
     let didUpdate = true

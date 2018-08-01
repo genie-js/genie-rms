@@ -46,13 +46,13 @@ class ScriptController extends Module {
 
     this.createSharedResources()
 
-    console.time('parse')
+    this.logger.time('parse')
     this.parser.write(randomMapDef)
     this.parser.write(this.source)
     const parseResult = this.parser.end()
-    console.timeEnd('parse')
+    this.logger.timeEnd('parse')
 
-    console.log(parseResult)
+    this.logger.log(parseResult)
 
     if (parseResult.elevation) {
       this.addModule(new ElevationGenerator(this.map, this, parseResult.elevation, parseResult.elevationHotspots))

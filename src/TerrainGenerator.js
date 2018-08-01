@@ -1,3 +1,4 @@
+const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
@@ -8,6 +9,7 @@ class TerrainGenerator extends Module {
     this.hotspots = hotspots
     this.random = parent.random
 
+    this.logger = new Logger('terrain')
     this.schedule = 2.0
   }
 
@@ -65,7 +67,7 @@ class TerrainGenerator extends Module {
       })
     }
 
-    console.log('place', numberOfClumps, 'clumps of', desc.type)
+    this.logger.log('place', numberOfClumps, 'clumps of', desc.type)
 
     const clumps = []
     for (let i = 0; i < numberOfClumps; i++) {

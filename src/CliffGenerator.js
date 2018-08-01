@@ -1,3 +1,4 @@
+const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
@@ -8,17 +9,18 @@ class CliffGenerator extends Module {
     this.hotspots = hotspots
     this.validCliffSites = null
 
+    this.logger = new Logger('cliffs')
     this.schedule = 1.75
   }
 
   generate () {
     const { minNumber, maxNumber } = this.info
 
-    console.log('setupCliffMaps')
+    this.logger.log('setupCliffMaps')
     this.setupCliffMaps()
 
     const numberOfCliffs = minNumber + this.random.nextRange(maxNumber - minNumber)
-    console.log('generateCliffs', numberOfCliffs)
+    this.logger.log('generateCliffs', numberOfCliffs)
     for (let i = 0; i < numberOfCliffs; i += 1) {
       this.generateCliff()
     }

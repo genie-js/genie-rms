@@ -311,7 +311,7 @@ class Map {
   }
 
   render () {
-    const imageData = new Uint8Array(this.sizeX * this.sizeY * 4)
+    const imageData = new Uint8ClampedArray(this.sizeX * this.sizeY * 4)
     const centers = []
     for (let y = 0; y < this.sizeY; y++) {
       for (let x = 0; x < this.sizeX; x++) {
@@ -361,7 +361,7 @@ class Map {
       }
     })
 
-    if (pngjs) {
+    if (pngjs && typeof pngjs.PNG === 'function') {
       const png = new pngjs.PNG({
         width: this.sizeX,
         height: this.sizeY

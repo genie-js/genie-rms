@@ -13,6 +13,9 @@
   "bugs": "https://github.com/goto-bus-stop/genie-rms/issues",
   "author": "goto-bus-stop <rene@kooi.me>",
   "main": "lib/RMS",
+  "browser": {
+    "pngjs": false
+  },
   "dependencies": {
     "awestruct": "^0.12.3",
     "chalk": "^2.4.1",

@@ -9,7 +9,7 @@ const TOKEN_TYPE_DEFINE = 1
 const TOKEN_TYPE_CONST = 2
 
 const TOK_DEFINE = 0
-const TOK_UNDEFINE = 1
+const TOK_UNDEFINE = 1 // eslint-disable-line no-unused-vars
 const TOK_CONST = 2
 const TOK_IF = 3
 const TOK_ELIF = 4
@@ -180,8 +180,8 @@ class Parser {
         let x = this.random.nextRange(availX)
         let y = this.random.nextRange(availY)
 
-        if (x >= availX * 1/3 && x <= availX * 2/3
-          || y >= availY * 1/3 && y <= availY * 2/3) {
+        if ((x >= availX * 1 / 3 && x <= availX * 2 / 3) ||
+            (y >= availY * 1 / 3 && y <= availY * 2 / 3)) {
           x += land.baseSize + land.leftBorder
           y += land.baseSize + land.topBorder
 
@@ -192,8 +192,8 @@ class Parser {
               const dy = abs(y - other.position.y)
               let minDistance = land.minPlacementDistance
               if (minDistance < 0) {
-                minDistance = Math.min(other.area, land.area)
-                  + land.baseSize + other.baseSize
+                minDistance = Math.min(other.area, land.area) +
+                  land.baseSize + other.baseSize
               }
 
               if (dx < minDistance && dy < minDistance) {
@@ -429,7 +429,6 @@ class Parser {
     last.value = value
   }
 
-
   parseToken () {
     const token = this.currentToken
     const {
@@ -571,7 +570,7 @@ class Parser {
         case TOK_INCLUDE: // #include
           throw this.error('#include is not supported')
         case TOK_INCLUDE_DRS: { // #include_drs
-          const [ name, id] = args
+          const [ , id ] = args
           if (id in hardcodedDrsIncludes) {
             this.includeCode(hardcodedDrsIncludes[id])
           } else {
@@ -718,7 +717,7 @@ class Parser {
       rightBorder: this.options.size,
       bottomBorder: this.options.size,
       borderFuzziness: 20,
-      minPlacementDistance: -1,
+      minPlacementDistance: -1
     }))
     this.objectHotspots.push(s({
       x: -1,

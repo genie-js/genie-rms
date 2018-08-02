@@ -2,13 +2,6 @@ const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
-function toObjectPosition (tile) {
-  return {
-    x: tile.x + 0.5,
-    y: tile.y + 0.5
-  }
-}
-
 const { floor } = Math
 
 class ObjectsGenerator extends Module {
@@ -97,9 +90,7 @@ class ObjectsGenerator extends Module {
         continue
       }
 
-      const position = toObjectPosition(tile)
       this.avoidPosition(positions, tile, desc.minDistanceGroupPlacement)
-      // this.avoidPosition(positions, tile, desc.maxDistanceGroupPlacement)
 
       if (desc.groupingType !== 0) {
         if (desc.groupingType === 1) {
@@ -194,7 +185,6 @@ class ObjectsGenerator extends Module {
     this.logger.log('generating', position, minDistance, maxDistance)
     // TODO Correct implementation with min and max distance
     const stack = new StackNode()
-    const size = this.map.sizeX * this.map.sizeY
 
     const minX = maxDistance < 0 ? 0 : Math.max(0, position.x - maxDistance)
     const minY = maxDistance < 0 ? 0 : Math.max(0, position.y - maxDistance)

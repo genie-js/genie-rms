@@ -35,14 +35,12 @@ class TerrainGenerator extends Module {
       }
     }
 
-    this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, 1);
+    this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, 1)
     this.checkBorders()
   }
 
   generateTerrain (desc) {
     const numberOfClumps = Math.min(desc.numberOfClumps, 999)
-    const sizeX = this.map.sizeX - 1
-    const sizeY = this.map.sizeY - 1
 
     const terrainFairnessZones = []
     const terrainFairnessZonesVisited = []
@@ -62,7 +60,6 @@ class TerrainGenerator extends Module {
 
     const stack = this.linkStackRandomly()
     const baseArea = Math.min(2, 2 * Math.sqrt(desc.tiles / desc.numberOfClumps))
-    let clumpsPlaced = 0
     let clumpIndex = 0
     let tilesPlaced = 0
     let next
@@ -101,8 +98,8 @@ class TerrainGenerator extends Module {
         if (tilesPlaced < desc.tiles && (next = this.popStack(clump))) {
           done = false
           const { x, y } = next
-          if (desc.avoidPlayerStartAreas !== 0
-              && this.searchMapRows[y][x] > this.random.nextRange(100)) {
+          if (desc.avoidPlayerStartAreas !== 0 &&
+              this.searchMapRows[y][x] > this.random.nextRange(100)) {
             continue
           }
 
@@ -181,21 +178,21 @@ class TerrainGenerator extends Module {
   }
 
   _isBorderedByWater (x, y) {
-    if (y > 0 && this._isWaterTile(x, y - 1) ||
-        y < this.map.sizeY - 1 && this._isWaterTile(x, y + 1)) {
+    if ((y > 0 && this._isWaterTile(x, y - 1)) ||
+        (y < this.map.sizeY - 1 && this._isWaterTile(x, y + 1))) {
       return true
     }
     if (x > 0 && (
       this._isWaterTile(x - 1, y) ||
-      y > 0 && this._isWaterTile(x - 1, y - 1) ||
-      y < this.map.sizeY - 1 && this._isWaterTile(x - 1, y + 1)
+      (y > 0 && this._isWaterTile(x - 1, y - 1)) ||
+      (y < this.map.sizeY - 1 && this._isWaterTile(x - 1, y + 1))
     )) {
       return true
     }
     if (x < this.map.sizeX - 1 && (
       this._isWaterTile(x + 1, y) ||
-      y > 0 && this._isWaterTile(x + 1, y - 1) ||
-      y < this.map.sizeY - 1 && this._isWaterTile(x + 1, y + 1)
+      (y > 0 && this._isWaterTile(x + 1, y - 1)) ||
+      (y < this.map.sizeY - 1 && this._isWaterTile(x + 1, y + 1))
     )) {
       return true
     }

@@ -59,9 +59,9 @@ class CliffGenerator extends Module {
         if (direction > 3) direction -= 4
       }
 
-      let next = this.getValidSite(direction, x, y, validHeight)
-        || this.getValidSite(direction + 1, x, y, validHeight)
-        || this.getValidSite(direction - 1, x, y, validHeight)
+      let next = this.getValidSite(direction, x, y, validHeight) ||
+        this.getValidSite(direction + 1, x, y, validHeight) ||
+        this.getValidSite(direction - 1, x, y, validHeight)
       if (!next && i === 0) {
         next = this.getValidSite(direction - 2, x, y, validHeight)
       }
@@ -133,9 +133,9 @@ class CliffGenerator extends Module {
             this.pushStack(validCliffSites, x, y, 0, 0)
           }
         } else {
-           if (isWaterArea) {
-             this.invalidateArea(x, y, minDistanceToTerrain)
-           }
+          if (isWaterArea) {
+            this.invalidateArea(x, y, minDistanceToTerrain)
+          }
           this.searchMapRows[y][x] = 0
         }
       }
@@ -147,11 +147,11 @@ class CliffGenerator extends Module {
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
-        if (this.searchMapRows[y][x] !== 0
-            && (y <= 0 || this.searchMapRows[y - 1][x] === 0)
-            && (x <= 0 || this.searchMapRows[y][x - 1] === 0)
-            && (y >= height - 1 || this.searchMapRows[y + 1][x] === 0)
-            && (x >= width - 1 || this.searchMapRows[y][x + 1]) === 0) {
+        if (this.searchMapRows[y][x] !== 0 &&
+            (y <= 0 || this.searchMapRows[y - 1][x] === 0) &&
+            (x <= 0 || this.searchMapRows[y][x - 1] === 0) &&
+            (y >= height - 1 || this.searchMapRows[y + 1][x] === 0) &&
+            (x >= width - 1 || this.searchMapRows[y][x + 1]) === 0) {
           this.searchMapRows[y][x] = 0
           this.removeStackNode(this.nodes[y][x])
         }
@@ -200,7 +200,7 @@ class CliffGenerator extends Module {
     return null
   }
 
-  invalidateArea(x, y, r) {
+  invalidateArea (x, y, r) {
     const minX = Math.max(0, x - r)
     const minY = Math.max(0, y - r)
     const maxX = Math.min(Math.floor(this.map.sizeX / 3 - 1), x + r)

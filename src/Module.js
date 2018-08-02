@@ -85,7 +85,7 @@ class Module {
     return {
       searchMap: this.searchMap,
       searchMapRows: this.searchMapRows,
-      nodes: this.nodes,
+      nodes: this.nodes
     }
   }
 

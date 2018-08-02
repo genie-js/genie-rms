@@ -26,9 +26,11 @@
   },
   "devDependencies": {
     "brfs": "^1.4.3",
-    "buble": "^0.15.2"
+    "buble": "^0.15.2",
+    "standard": "^11.0.1"
   },
   "scripts": {
+    "test": "standard src/**/*.js",
     "build:lres": "brfs src/landResources.js > lib/landResources.js",
     "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
     "build:json": "cp src/*.json lib/",

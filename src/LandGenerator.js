@@ -68,8 +68,8 @@ class LandGenerator extends Module {
         }
 
         if (this.searchMapRows[y][x] === land.zone) {
-          if (curY >= centerMinY && curY <= centerMaxY
-              && curX >= centerMinX && curX <= centerMaxX) {
+          if (curY >= centerMinY && curY <= centerMaxY &&
+              curX >= centerMinX && curX <= centerMaxX) {
             count += 1
           } else if (this.searchMapRows[y][x] < this.lands.length) {
             return 0
@@ -93,7 +93,7 @@ class LandGenerator extends Module {
 
     const stacks = []
     const landSizes = []
-    for (const land of this.lands) {
+    for (let i = 0; i < this.lands.length; i++) {
       stacks.push(new StackNode())
       landSizes.push(0)
     }
@@ -194,11 +194,11 @@ class LandGenerator extends Module {
       let node
       while ((node = this.popStack(stacks[landId]))) {
         const { x, y } = node
-        if (x > 0 && this.searchMapRows[y][x - 1] === land.zone
-           && x < sizeX && this.searchMapRows[y][x + 1] === land.zone) {
+        if (x > 0 && this.searchMapRows[y][x - 1] === land.zone &&
+           x < sizeX && this.searchMapRows[y][x + 1] === land.zone) {
           this.map.get({ x, y }).terrain = land.terrain
-        } else if (y > 0 && this.searchMapRows[y - 1][x] === land.zone
-           && y < sizeX && this.searchMapRows[y + 1][x] === land.zone) {
+        } else if (y > 0 && this.searchMapRows[y - 1][x] === land.zone &&
+           y < sizeX && this.searchMapRows[y + 1][x] === land.zone) {
           this.map.get({ x, y }).terrain = land.terrain
         }
       }

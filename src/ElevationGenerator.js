@@ -36,7 +36,7 @@ class ElevationGenerator extends Module {
     this.searchMap.fill(0)
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        let modifier = 0;
+        let modifier = 0
         for (const hotspot of this.hotspots) {
           const distX = Math.abs(x - hotspot.x)
           const distY = Math.abs(y - hotspot.y)
@@ -57,7 +57,7 @@ class ElevationGenerator extends Module {
   }
 
   generateElevation (elevation) {
-    const { baseTerrain, baseElevation, spacing, height, numberOfTiles } = elevation
+    const { baseTerrain, baseElevation, spacing, height } = elevation
     let { numberOfClumps } = elevation
     if (numberOfClumps > 999) numberOfClumps = 999
 
@@ -73,7 +73,7 @@ class ElevationGenerator extends Module {
       if (!node) break
       if (this._getModifier(node.x, node.y) === 0 &&
           this._matchesTerrain(node.x, node.y, baseTerrain, baseElevation, spacing)) {
-        const tile = this.map.get({ x, y })
+        const tile = this.map.get(node)
         tile.elevation = height
 
         if (node.x > 0) this.pushStack(clump, node.x - 1, node.y, 0, 0)

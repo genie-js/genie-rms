@@ -1,3 +1,4 @@
+/* global ImageData */
 const Logger = require('./Logger.js')
 const ZoneMapList = require('./ZoneMapList.js')
 const terrainColors = require('./terrainColors.json')
@@ -208,7 +209,7 @@ class Map {
 
     const dx = x1 - x0
     const dy = y1 - y0
-    
+
     let x = x0
     let y = y0
     this.doTerrainBrush(x0, y0, floor(brushSize / 2), terrain)
@@ -231,11 +232,11 @@ class Map {
   doCliffBrush (x, y, cliffId, deleteCliff) {
     this.safeCliffX = floor(x / 3)
     this.safeCliffY = floor(y / 3)
-    if (this.oldCliffX === this.safeCliffX && this.oldCliffY === this.safeCliffY
-        || 3 * this.safeCliffX + 2 >= this.sizeX
-        || 3 * this.safeCliffY + 2 >= this.sizeY
-        || this.safeCliffX < 0
-        || this.safeCliffY < 0
+    if ((this.oldCliffX === this.safeCliffX && this.oldCliffY === this.safeCliffY) ||
+        3 * this.safeCliffX + 2 >= this.sizeX ||
+        3 * this.safeCliffY + 2 >= this.sizeY ||
+        this.safeCliffX < 0 ||
+        this.safeCliffY < 0
     ) {
       return false
     }
@@ -247,17 +248,17 @@ class Map {
       const dy = y - 3 * this.oldCliffY
       let valid = false
       if (dx >= 3 || dx <= -1) {
-        safeCliffY = this.oldCliffY
+        cliffY = this.oldCliffY
         valid = true
       }
       if (dy >= 3 || dy <= -1) {
-        safeCliffX = this.oldCliffX
+        cliffX = this.oldCliffX
         valid = true
       }
       if (!valid) return false
     }
 
-    if (safeCliffX === this.oldCliffX && safeCliffY === this.oldCliffY) {
+    if (cliffX === this.oldCliffX && cliffY === this.oldCliffY) {
       return true
     }
 
@@ -267,21 +268,21 @@ class Map {
 
     if (this.oldCliffX === -1) {
       this.oldCliffDirection = -1
-      this.oldCliffX = safeCliffX
-      this.oldCliffY = safeCliffY
+      this.oldCliffX = cliffX
+      this.oldCliffY = cliffY
       return true
     }
 
-    const direction = this.oldCliffX === safeCliffX
-      ? (this.oldCliffY < safeCliffY ? 1 : 3)
-      : (this.oldCliffX < safeCliffX ? 0 : 2)
+    const direction = this.oldCliffX === cliffX
+      ? (this.oldCliffY < cliffY ? 1 : 3)
+      : (this.oldCliffX < cliffX ? 0 : 2)
 
     const unk = this.addCliffEdge(this.oldCliffX, this.oldCliffY, direction, 0, this.oldCliffDirection)
     const otherDirection = reverseDirection(direction)
     this.oldCliffDirection = otherDirection
-    this.oldCliffX = safeCliffX
-    this.oldCliffY = safeCliffY
-    this.addCliffEdge(safeCliffX, safeCliffY, otherDirection, unk, -1)
+    this.oldCliffX = cliffX
+    this.oldCliffY = cliffY
+    this.addCliffEdge(cliffX, cliffY, otherDirection, unk, -1)
     return true
   }
 
@@ -349,7 +350,7 @@ class Map {
         [-1, -2], [-1, 2],
         [0, -2], [0, 2],
         [1, -2], [1, 2],
-        [2, -2], [2, -1], [2, 0], [2, 1], [2, 2],
+        [2, -2], [2, -1], [2, 0], [2, 1], [2, 2]
       ]
       for (const [x, y] of pts) {
         const b = (this.sizeX * (tile.y + y) + (tile.x + x)) * 4

@@ -16,7 +16,6 @@ module.exports = {
 
   watch: {
     data (bytes) {
-      console.error({ bytes })
       if (bytes) {
         const imageData = new ImageData(bytes, this.size, this.size)
         const canvas = document.createElement('canvas')

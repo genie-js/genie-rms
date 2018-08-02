@@ -82,6 +82,8 @@ class Parser {
     this.ifStack = []
     this.parseState = []
 
+    this.stages = []
+
     this.terrains = []
     this.lands = []
     this.landMeta = {}
@@ -176,6 +178,7 @@ class Parser {
       const availX = land.rightBorder - land.leftBorder - 2 * land.baseSize
       const availY = land.bottomBorder - land.topBorder - 2 * land.baseSize
       this.logger.log('availX', land.rightBorder, land.leftBorder, land.baseSize)
+      this.logger.log('availY', land.bottomBorder, land.topBorder, land.baseSize)
       let rndAttemptsRemaining = 990
       while (rndAttemptsRemaining > 0) {
         let x = this.random.nextRange(availX)
@@ -301,6 +304,8 @@ class Parser {
     // TODO: resolve connections here
 
     return {
+      sections: this.stages,
+
       terrains: this.terrains,
       lands: this.lands,
       activeLands: this.activeLands,
@@ -631,11 +636,13 @@ class Parser {
           const landId = this.createLand(i)
           this.activeLands.push(landId)
         }
+        this.isPlayerLand = true
         return
       }
       if (id === 32) { // create_land
         const landId = this.createLand(0)
         this.activeLands.push(landId)
+        this.isPlayerLand = false
         return
       }
     }
@@ -644,6 +651,7 @@ class Parser {
       const land = this.lands[landId]
       switch (id) {
         case 71: // land_position
+          if (this.isPlayerLand) break
           land.position = {
             x: args[0] / 100 * this.options.size,
             y: args[1] / 100 * this.options.size
@@ -681,7 +689,7 @@ class Parser {
           land.zone = landId - this.activeLands[0] + 1
           break
         case 30: // set_zone_randomly
-          land.zone = this.random.nextRange(this.options.numPlayers) + 2
+          land.zone = this.random.nextRange(this.options.numPlayers - 1) + 2
           break
         case 31: // other_zone_avoidance_distance
           land.area = args[0]
@@ -699,7 +707,18 @@ class Parser {
           land.minPlacementDistance = args[0]
           break
         case 33: // assign_to_player
-          land.playerId = args[0]
+          if (!this.isPlayerLand) {
+            if (args[0] < 0 || args[0] > 9) break
+            if (args[0] >= this.options.numPlayers) {
+              this.logger.log(`Player ${args[0]} does not exist, removing land`)
+              this.lands.pop()
+              this.objectHotspots.pop()
+            }
+            const objectHs = this.objectHotspots[landId]
+            objectHs.playerId = args[0]
+            if (!objectHs.id) objectHs.id = 1
+          }
+          break
       }
     }
   }
@@ -1056,11 +1075,15 @@ class Parser {
 
   parseSectionHeader (type) {
     this.stage = type
-    // src also marks the section as existing here.
-    // that's only needed for generation, because it only adds the generator classes
-    // for each section if one exists.
-    // eg. without an <ELEVATION_GENERATION> section, the elevation generator is not run at all,
-    // but with an empty <ELEVATION_GENERATION> section, it's run with the default settings (=flat land).
+    this.stages.push({
+      [TOK_PLAYER_SETUP]: 'players',
+      [TOK_LAND_GENERATION]: 'land',
+      [TOK_CLIFF_GENERATION]: 'cliffs',
+      [TOK_TERRAIN_GENERATION]: 'terrain',
+      [TOK_OBJECTS_GENERATION]: 'objects',
+      [TOK_CONNECTION_GENERATION]: 'connections',
+      [TOK_ELEVATION_GENERATION]: 'elevation'
+    }[type])
   }
 
   readString () {

@@ -54,22 +54,26 @@ class ScriptController extends Module {
 
     this.logger.log(parseResult)
 
-    if (parseResult.elevation) {
-      this.addModule(new ElevationGenerator(this.map, this, parseResult.elevation, parseResult.elevationHotspots))
+    const sections = new Set(parseResult.sections)
+    if (sections.has('land')) sections.add('terrain')
+    if (sections.has('terrain')) sections.add('objects')
+
+    if (sections.has('elevation')) {
+      this.addModule(new ElevationGenerator(this.map, this, parseResult.elevations, parseResult.elevationHotspots))
     }
-    if (parseResult.connections.length > 0) {
+    if (sections.has('connections')) {
       this.addModule(new ConnectionGenerator(this.map, this, parseResult.connections))
     }
-    if (parseResult.terrains.length > 0) {
+    if (sections.has('terrain')) {
       this.addModule(new TerrainGenerator(this.map, this, parseResult.terrains, parseResult.terrainHotspots))
     }
-    if (parseResult.objects.length > 0) {
+    if (sections.has('objects')) {
       this.addModule(new ObjectsGenerator(this.map, this, this.world, parseResult.objects, parseResult.objectHotspots))
     }
-    if (parseResult.cliffs) {
+    if (sections.has('cliffs')) {
       this.addModule(new CliffGenerator(this.map, this, parseResult.cliffs, parseResult.cliffHotspots))
     }
-    if (parseResult.lands.length > 0) {
+    if (sections.has('land')) {
       this.addModule(new LandGenerator(this.map, this, parseResult.lands, parseResult.landMeta))
     }
 

@@ -69,7 +69,7 @@ class ElevationGenerator extends Module {
     const mainStack = this.findTiles(baseTerrain, baseElevation)
 
     for (const clump of clumps) {
-      const node = mainStack.pop()
+      const node = this.popStack(mainStack)
       if (!node) break
       if (this._getModifier(node.x, node.y) === 0 &&
           this._matchesTerrain(node.x, node.y, baseTerrain, baseElevation, spacing)) {

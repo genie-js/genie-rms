@@ -35,12 +35,11 @@ class LandGenerator extends Module {
     // this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.info.baseTerrain)
   }
 
-  checkTerrainAndZone (target, landNum, x, y) {
+  checkTerrainAndZone (land, x, y) {
     if (this.searchMapRows[y][x] !== this.lands.length) {
       return 0
     }
 
-    const land = this.lands[landNum]
     let count = 0
     let centerMinX = x - 2
     let centerMinY = y - 2
@@ -67,11 +66,11 @@ class LandGenerator extends Module {
           continue
         }
 
-        if (this.searchMapRows[y][x] === land.zone) {
+        if (this.searchMapRows[curY][curX] === land.zone) {
           if (curY >= centerMinY && curY <= centerMaxY &&
               curX >= centerMinX && curX <= centerMaxX) {
             count += 1
-          } else if (this.searchMapRows[y][x] < this.lands.length) {
+          } else if (this.searchMapRows[curY][curX] < this.lands.length) {
             return 0
           }
         }
@@ -82,9 +81,25 @@ class LandGenerator extends Module {
   }
 
   chance (x, y, landType) {
-    const { borderFuzziness } = this.lands[landType]
+    const {
+      borderFuzziness,
+      leftBorder,
+      rightBorder,
+      topBorder,
+      bottomBorder
+    } = this.lands[landType]
     if (!borderFuzziness) return 0
-    return 51
+
+    const horizDist = Math.max(0, Math.min(leftBorder - x, x - rightBorder))
+    const horizBorderDist = Math.max(leftBorder + horizDist, this.map.sizeX - rightBorder + (x - rightBorder))
+    const vertDist = Math.max(0, Math.max(
+      horizBorderDist <= 0 ? topBorder - y : horizBorderDist + topBorder - y,
+      horizBorderDist <= 0 ? y - bottomBorder : y + horizBorderDist - bottomBorder
+    ))
+
+    const chance = borderFuzziness * (horizDist + vertDist)
+
+    return chance >= 100 ? 101 : chance
   }
 
   baseLandGenerate () {
@@ -99,7 +114,7 @@ class LandGenerator extends Module {
     }
 
     for (const [landId, land] of Object.entries(this.lands)) {
-      this.logger.log('place base land', landId, land.zone, land.terrain)
+      this.logger.log('place base land', landId, land.zone, land.terrain, 'at', land.position)
       const minX = Math.max(0, land.position.x - land.baseSize)
       const minY = Math.max(0, land.position.y - land.baseSize)
       const maxX = Math.min(sizeX, land.position.x + land.baseSize)
@@ -143,25 +158,44 @@ class LandGenerator extends Module {
       }
     }
 
+    this.searchMapRows.forEach((row) => {
+      console.error(row.join(''))
+    })
+
     this.logger.log('distributing clumps', this.lands.map(l => l.tiles))
+    this.logger.log('available tiles', stacks.map(s => s.size()))
     let done = false
     while (!done) {
       done = true
       for (const [landId, land] of Object.entries(this.lands)) {
-        if (landSizes[landId] >= land.tiles) continue
+        this.logger.log('trying', landId)
+        if (landSizes[landId] >= land.tiles) {
+          this.logger.log('skipping', landId, 'because of size')
+          continue
+        }
         const tile = this.popStack(stacks[landId])
-        if (!tile) continue
+        if (!tile) {
+          this.logger.log('skipping', landId, 'because stack is empty')
+          continue
+        }
         const { x, y } = tile
         done = false
 
         if (this.chance(x, y, landId) > this.random.nextRange(100)) {
+          this.logger.log('skipping', landId, 'because of random')
           this.searchMapRows[y][x] = -1
           continue
         }
 
-        const cost = this.checkTerrainAndZone(land.terrain, landId, x, y)
+        const cost = this.checkTerrainAndZone(land, x, y)
+        if (cost === 0) {
+          this.logger.log('skipping', landId, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
+          continue
+        }
         const landCount = this.lands.length
         if (this.searchMapRows[y][x] === landCount && cost > 0) {
+          this.logger.log('placing', landId)
+
           this.map.get({ x, y }).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
 

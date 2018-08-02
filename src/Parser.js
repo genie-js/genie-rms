@@ -175,6 +175,7 @@ class Parser {
 
       const availX = land.rightBorder - land.leftBorder - 2 * land.baseSize
       const availY = land.bottomBorder - land.topBorder - 2 * land.baseSize
+      this.logger.log('availX', land.rightBorder, land.leftBorder, land.baseSize)
       let rndAttemptsRemaining = 990
       while (rndAttemptsRemaining > 0) {
         let x = this.random.nextRange(availX)
@@ -658,16 +659,16 @@ class Parser {
           land.terrain = args[0].type
           break
         case 23: // left_border
-          land.leftBorder = args[0] * this.options.size
+          land.leftBorder = args[0] * this.options.size / 100
           break
         case 24: // right_border
-          land.rightBorder = args[0] * this.options.size
+          land.rightBorder = this.options.size - args[0] * this.options.size / 100
           break
         case 25: // top_border
-          land.topBorder = args[0] * this.options.size
+          land.topBorder = args[0] * this.options.size / 100
           break
         case 26: // bottom_border
-          land.bottomBorder = args[0] * this.options.size
+          land.bottomBorder = this.options.size - args[0] * this.options.size / 100
           break
         case 27: // border_fuzziness
           land.borderFuzziness = args[0]

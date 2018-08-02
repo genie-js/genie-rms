@@ -309,7 +309,7 @@ class Map {
     }
   }
 
-  render () {
+  getImageData () {
     const imageData = new Uint8ClampedArray(this.sizeX * this.sizeY * 4)
     const centers = []
     for (let y = 0; y < this.sizeY; y++) {
@@ -359,6 +359,12 @@ class Map {
         imageData[b + 3] = 0xFF
       }
     })
+
+    return imageData
+  }
+
+  render () {
+    const imageData = this.getImageData()
 
     if (pngjs && typeof pngjs.PNG === 'function') {
       const png = new pngjs.PNG({

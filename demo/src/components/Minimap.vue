@@ -4,38 +4,29 @@
   </div>
 </template>
 <script>
-const debounce = require('debounce')
-const Controller = require('../../../src/Controller')
-
 module.exports = {
   name: 'minimap',
 
-  props: {
-    options: {
-      default: { seed: null }
-    },
-    code: String
-  },
+  props: ['data', 'size'],
 
   mounted () {
     this.canvas = this.$el.querySelector('canvas')
-    this.update()
-  },
-  watch: {
-    options () { this.update() },
-    code () { this.update() }
+    this.context = this.canvas.getContext('2d')
   },
 
-  methods: {
-    update: debounce(function () {
-      const controller = new Controller(this.code, this.options)
-      controller.generate()
-      this.draw(controller.map.render())
-    }, 300),
-    draw (canvas) {
-      const target = this.canvas.getContext('2d')
-      target.drawImage(canvas, 0, 0, this.canvas.width, this.canvas.height)
+  watch: {
+    data (bytes) {
+      console.error({ bytes })
+      if (bytes) {
+        const imageData = new ImageData(bytes, this.size, this.size)
+        const canvas = document.createElement('canvas')
+        canvas.width = this.size
+        canvas.height = this.size
+        canvas.getContext('2d').putImageData(imageData, 0, 0)
+
+        this.context.drawImage(canvas, 0, 0, this.canvas.width, this.canvas.height)
+      }
     }
-  }
+  },
 }
 </script>

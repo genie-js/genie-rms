@@ -15,7 +15,8 @@
   "main": "lib/RMS",
   "browser": {
     "pngjs": false,
-    "./lib/Logger.js": "./lib/BrowserLogger.js"
+    "./lib/Logger.js": "./lib/BrowserLogger.js",
+    "./src/Logger.js": "./src/BrowserLogger.js"
   },
   "dependencies": {
     "awestruct": "^0.12.3",

@@ -9,7 +9,7 @@
       </div>
       <div class="bg-dark-gray white pa2">
         <h2 class="pa0 ma0">Preview</h2>
-        <minimap :code="code" :options="{ randomSeed: seed }"></minimap>
+        <minimap :data="imageData" size="120"></minimap>
         <p class="flex items-center w-100">
           <span class="mr2">Seed:</span>
           <input type="number" min="0" max="32767" v-model="seed" class="self-stretch">
@@ -29,8 +29,10 @@
 </style>
 
 <script>
+const debounce = require('debounce')
 const { codemirror: CodeMirror } = require('vue-codemirror')
 const Minimap = require('./components/Minimap.vue')
+const generate = require('./generate.js')
 const fs = require('fs')
 
 // Add codemirror language.
@@ -44,6 +46,7 @@ module.exports = {
     return {
       code: arabiaRms,
       seed: 32767,
+      imageData: null,
       options: {
         mode: 'aoe2-rms',
         theme: 'monokai',
@@ -52,11 +55,29 @@ module.exports = {
       }
     }
   },
+
+  beforeMount () {
+    this.regenerate()
+  },
+
+  watch: {
+    code: 'regenerate',
+    seed: 'regenerate'
+  },
+
   methods: {
     randomSeed () {
       this.seed = Math.floor(Math.random() * 32767)
-    }
+    },
+    regenerate: debounce(function () {
+      generate(this.code, {
+        randomSeed: this.seed
+      }).then(({ imageData }) => {
+        this.imageData = imageData
+      })
+    }, 300)
   },
+
   components: {
     CodeMirror,
     Minimap

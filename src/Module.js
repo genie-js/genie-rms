@@ -1,4 +1,4 @@
-const bySchedule = require('sort-by')('schedule')
+const bySchedule = require('./sortBy.js')('schedule')
 const StackNode = require('./StackNode.js')
 
 class Module {

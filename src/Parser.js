@@ -1,4 +1,3 @@
-const chalk = require('chalk')
 const Logger = require('./Logger.js')
 const Token = require('./Token.js')
 const CRandom = require('./CRandom.js')
@@ -96,7 +95,7 @@ class Parser {
 
   log (...args) {
     this.logger.log(
-      chalk.grey(`(${this.line}:${this.column})`),
+      this.logger.grey(`(${this.line}:${this.column})`),
       ...args
     )
   }
@@ -477,14 +476,14 @@ class Parser {
       switch (id) {
         case TOK_DEFINE: { // #define
           const [ name ] = args
-          this.log('Defining constant', chalk.cyan(name))
+          this.log('Defining constant', this.logger.cyan(name))
           this.defineUserToken(name, TOKEN_TYPE_DEFINE, 0,
             [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
           break
         }
         case TOK_CONST: { // #const
           const [ name, value ] = args
-          this.log('Defining constant', chalk.cyan(name), value)
+          this.log('Defining constant', this.logger.cyan(name), value)
           this.defineUserToken(name, TOKEN_TYPE_CONST, value,
             [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
           break

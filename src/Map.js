@@ -1,4 +1,3 @@
-const chalk = require('chalk')
 const Logger = require('./Logger.js')
 const ZoneMapList = require('./ZoneMapList.js')
 const terrainColors = require('./terrainColors.json')
@@ -61,7 +60,7 @@ class Map {
     const tile = this.get(coords)
     if (tile.object) {
       const { x, y } = coords
-      this.logger.warn(chalk.red(`Tried placing an object on a tile that already has an object (${x},${y})`))
+      this.logger.warn(this.logger.red(`Tried placing an object on a tile that already has an object (${x},${y})`))
       return
     }
     tile.object = unit

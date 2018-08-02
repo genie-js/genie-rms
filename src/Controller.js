@@ -1,4 +1,3 @@
-const chalk = require('chalk')
 const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const CRandom = require('./CRandom.js')
@@ -32,8 +31,8 @@ class ScriptController extends Module {
 
   onWarn (err) {
     this.logger.warn(
-      chalk.grey(`(${err.line}:${err.column})`),
-      chalk.red(err.message)
+      this.logger.grey(`(${err.line}:${err.column})`),
+      this.logger.red(err.message)
     )
   }
 

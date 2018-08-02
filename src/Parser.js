@@ -210,6 +210,12 @@ class Parser {
           }
         }
       }
+      if (rndAttemptsRemaining <= 0) {
+        land.position = {
+          x: floor(this.options.size / 2),
+          y: floor(this.options.size / 2)
+        }
+      }
     }
 
     for (const [i, land] of Object.entries(this.lands)) {

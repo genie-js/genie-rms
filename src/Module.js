@@ -158,7 +158,7 @@ class Module {
 
     let len = array.length
     while (len) {
-      const rand = Math.floor(Math.random() * len)
+      const rand = this.random.nextRange(len)
       len -= 1
       const t = array[len]
       array[len] = array[rand]

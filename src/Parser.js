@@ -176,8 +176,8 @@ class Parser {
     for (let i = 0; i < this.options.numPlayers; i += 1) {
       players.push({
         id: i,
-        x: Math.floor(Math.random() * this.options.size),
-        y: Math.floor(Math.random() * this.options.size)
+        x: this.random.nextRange(this.options.size),
+        y: this.random.nextRange(this.options.size)
       })
     }
 

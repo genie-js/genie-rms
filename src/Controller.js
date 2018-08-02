@@ -19,8 +19,7 @@ class ScriptController extends Module {
     this.source = source
     this.options = options
 
-    this.random = this.options.random
-      || new CRandom(Date.now())
+    this.random = new CRandom(this.options.randomSeed || Date.now())
 
     this.logger = new Logger('controller')
     this.map = new Map()
@@ -39,6 +38,8 @@ class ScriptController extends Module {
   }
 
   generate () {
+    this.logger.log('generating map with seed', this.random.seed)
+
     this.parser = new Parser({
       random: this.random,
       onWarn: this.onWarn.bind(this)

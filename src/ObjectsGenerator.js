@@ -239,7 +239,7 @@ class ObjectsGenerator extends Module {
   placeLooseGroup (desc, position, playerId) {
     const stack = this.generatePositions(position, 0, desc.groupPlacementRadius)
 
-    let toPlace = Math.max(1, (Math.random() * desc.groupVariance * 2) + desc.amount - desc.groupVariance)
+    let toPlace = Math.max(1, this.random.nextRange(desc.groupVariance * 2) + desc.amount - desc.groupVariance)
     let next
     while ((next = this.popStack(stack)) && toPlace > 0) {
       const { terrain } = this.map.get(next)
@@ -259,7 +259,7 @@ class ObjectsGenerator extends Module {
     const stack = new StackNode()
     this.addStackNode(stack, this.nodes[y][x])
 
-    let toPlace = Math.max(1, (Math.random() * desc.groupVariance * 2) + desc.amount - desc.groupVariance)
+    let toPlace = Math.max(1, this.random.nextRange(desc.groupVariance * 2) + desc.amount - desc.groupVariance)
     let next
     while ((next = this.popStack(stack)) && toPlace > 0) {
       this.searchMapRows[next.y][next.x] = 0

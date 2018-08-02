@@ -141,11 +141,9 @@ class CliffGenerator extends Module {
       }
     }
 
-    /*
-    for (const { x, y, radius } of this.info.hotspots) {
+    for (const { x, y, radius } of this.hotspots) {
       this.invalidateArea(x, y, radius)
     }
-    */
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {

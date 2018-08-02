@@ -1,21 +1,84 @@
+const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
 class LandGenerator extends Module {
-  constructor (map, parent, lands) {
+  constructor (map, parent, lands, meta) {
     super(map, parent, true)
     this.lands = lands
+    this.meta = meta
 
+    this.logger = new Logger('lands')
     this.schedule = 1.0
+  }
+
+  /**
+   * Apply the base terrain to all tiles on the map.
+   */
+  _applyBaseTerrain () {
+    const baseTerrain = this.meta.baseTerrain
+    for (let y = 0; y < this.map.sizeY; y++) {
+      for (let x = 0; x < this.map.sizeX; x++) {
+        this.map.get({ x, y }).terrain = baseTerrain
+      }
+    }
   }
 
   generate () {
     this.clearStack()
+
+    this.searchMap.fill(this.lands.length)
+
+    this._applyBaseTerrain()
     this.baseLandGenerate()
+
     // this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.info.baseTerrain)
   }
 
   checkTerrainAndZone (target, landNum, x, y) {
+    if (this.searchMapRows[y][x] !== this.lands.length) {
+      return 0
+    }
+
+    const land = this.lands[landNum]
+    let count = 0
+    let centerMinX = x - 2
+    let centerMinY = y - 2
+    let centerMaxX = x + 2
+    let centerMaxY = y + 2
+
+    for (let curY = y - land.area; curY <= y + land.area; curY += 1) {
+      if (curY < 0) {
+        if (curY > centerMinY) count += 5
+        continue
+      }
+      if (curY >= this.map.sizeY) {
+        if (curY < centerMaxY) count += 5
+        continue
+      }
+
+      for (let curX = x - land.area; curX <= x + land.area; curX += 1) {
+        if (curX < 0) {
+          if (curX > centerMinX) count += 5
+          continue
+        }
+        if (curX >= this.map.sizeX) {
+          if (curX < centerMaxX) count += 5
+          continue
+        }
+
+        if (this.searchMapRows[y][x] === land.zone) {
+          if (curY >= centerMinY && curY <= centerMaxY
+              && curX >= centerMinX && curX <= centerMaxX) {
+            count += 1
+          } else if (this.searchMapRows[y][x] < this.lands.length) {
+            return 0
+          }
+        }
+      }
+    }
+
+    return count
   }
 
   chance (x, y, landType) {
@@ -29,14 +92,14 @@ class LandGenerator extends Module {
     const sizeY = this.map.sizeY - 1
 
     const stacks = []
-    const landSize = []
-    for (const _ of this.lands) {
+    const landSizes = []
+    for (const land of this.lands) {
       stacks.push(new StackNode())
-      landSize.push(0)
+      landSizes.push(0)
     }
 
-    for (let landId = 0; landId < this.lands.length; landId++) {
-      const land = this.lands[landId]
+    for (const [landId, land] of Object.entries(this.lands)) {
+      this.logger.log('place base land', landId, land.zone, land.terrain)
       const minX = Math.max(0, land.position.x - land.baseSize)
       const minY = Math.max(0, land.position.y - land.baseSize)
       const maxX = Math.min(sizeX, land.position.x + land.baseSize)
@@ -50,7 +113,7 @@ class LandGenerator extends Module {
         }
       }
 
-      landSize[land.zone] = (maxY - minY + 1) * (maxX - minX + 1)
+      landSizes[land.zone] = (maxY - minY + 1) * (maxX - minX + 1)
 
       for (let y = minY; y <= maxY; y++) {
         for (let x = minX; x <= maxX; x++) {
@@ -80,12 +143,12 @@ class LandGenerator extends Module {
       }
     }
 
+    this.logger.log('distributing clumps', this.lands.map(l => l.tiles))
     let done = false
     while (!done) {
       done = true
-      for (let landId = 0; landId < this.lands.length; landId++) {
-        const land = this.lands[landId]
-        if (landSize[landId] >= land.tiles) continue
+      for (const [landId, land] of Object.entries(this.lands)) {
+        if (landSizes[landId] >= land.tiles) continue
         const tile = this.popStack(stacks[landId])
         if (!tile) continue
         const { x, y } = tile
@@ -119,11 +182,13 @@ class LandGenerator extends Module {
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
 
-          landSize[landId] += 1
+          landSizes[landId] += 1
         }
       }
+      this.logger.log('land sizes:', landSizes)
     }
 
+    this.logger.log('cleaning terrain')
     for (let landId = 0; landId < this.lands.length; landId++) {
       const land = this.lands[landId]
       let node

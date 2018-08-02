@@ -70,7 +70,7 @@ class ScriptController extends Module {
       this.addModule(new CliffGenerator(this.map, this, parseResult.cliffs, parseResult.cliffHotspots))
     }
     if (parseResult.lands.length > 0) {
-      this.addModule(new LandGenerator(this.map, this, parseResult.lands))
+      this.addModule(new LandGenerator(this.map, this, parseResult.lands, parseResult.landMeta))
     }
 
     super.generate()

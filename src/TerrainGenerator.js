@@ -13,21 +13,7 @@ class TerrainGenerator extends Module {
     this.schedule = 2.0
   }
 
-  /**
-   * Apply the base terrain to all tiles on the map.
-   */
-  _applyBaseTerrain () {
-    const baseTerrain = this.parent.parser.baseTerrain
-    for (let y = 0; y < this.map.sizeY; y++) {
-      for (let x = 0; x < this.map.sizeX; x++) {
-        this.map.get({ x, y }).terrain = baseTerrain
-      }
-    }
-  }
-
   generate () {
-    this._applyBaseTerrain()
-
     this._generateModifiers()
 
     const terrainRules = []

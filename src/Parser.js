@@ -84,6 +84,7 @@ class Parser {
 
     this.terrains = []
     this.lands = []
+    this.landMeta = {}
     this.activeLands = []
     this.objects = []
     this.connections = []
@@ -301,10 +302,11 @@ class Parser {
       elevations: this.elevations,
       cliffs: this.cliffs,
 
+      landMeta: this.landMeta,
       terrainHotspots: this.terrainHotspots,
       objectHotspots: this.objectHotspots,
       elevationHotspots: this.elevationHotspots,
-      cliffHotspots: this.cliffHotspots,
+      cliffHotspots: this.cliffHotspots
     }
   }
 
@@ -613,7 +615,7 @@ class Parser {
     const { id } = token
     if (!this.insideBlock) {
       if (id === 19) { // base_terrain
-        this.baseTerrain = args[0].value
+        this.landMeta.baseTerrain = args[0].value
         return
       }
 
@@ -669,10 +671,11 @@ class Parser {
           land.zone = args[0] + 10 // what's this for?
           break
         case 29: // set_zone_by_team
-          // TODO
+          // TODO implement this correctly
+          land.zone = landId - this.activeLands[0] + 1
           break
         case 30: // set_zone_randomly
-          // TODO
+          land.zone = this.random.nextRange(this.options.numPlayers) + 2
           break
         case 31: // other_zone_avoidance_distance
           land.area = args[0]

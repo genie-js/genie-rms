@@ -165,6 +165,10 @@ class Module {
       array[rand] = t
     }
 
+    if (array.length === 0) {
+      return
+    }
+
     array.forEach((node, i) => {
       node.prev = array[i - 1]
       node.next = array[i + 1]

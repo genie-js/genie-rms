@@ -99,7 +99,7 @@ class ObjectsGenerator extends Module {
 
       const position = toObjectPosition(tile)
       this.avoidPosition(positions, tile, desc.minDistanceGroupPlacement)
-      this.avoidPosition(positions, tile, desc.maxDistanceGroupPlacement)
+      // this.avoidPosition(positions, tile, desc.maxDistanceGroupPlacement)
 
       if (desc.groupingType !== 0) {
         if (desc.groupingType === 1) {
@@ -170,7 +170,7 @@ class ObjectsGenerator extends Module {
         })
       } else {
         this.avoidPosition(positions, next, desc.minDistanceGroupPlacement)
-        this.avoidPosition(positions, next, desc.maxDistanceGroupPlacement)
+        // this.avoidPosition(positions, next, desc.maxDistanceGroupPlacement)
 
         if (desc.groupingType === 0) {
           this.map.place(next, {

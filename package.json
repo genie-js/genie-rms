@@ -23,7 +23,8 @@
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
     "pngjs": "^3.3.2",
-    "sort-by": "^1.2.0"
+    "sort-by": "^1.2.0",
+    "strict-dict": "^1.0.3"
   },
   "devDependencies": {
     "brfs": "^1.4.3",

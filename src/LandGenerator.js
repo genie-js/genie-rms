@@ -19,8 +19,9 @@ class LandGenerator extends Module {
   }
 
   chance (x, y, landType) {
-    const { wallFade } = this.lands[landType]
-    if (!wallFade) return 0
+    const { borderFuzziness } = this.lands[landType]
+    if (!borderFuzziness) return 0
+    return 51
   }
 
   baseLandGenerate () {
@@ -36,12 +37,18 @@ class LandGenerator extends Module {
 
     for (let landId = 0; landId < this.lands.length; landId++) {
       const land = this.lands[landId]
-      const minX = Math.max(0, land.x - land.baseSize)
-      const minY = Math.max(0, land.y - land.baseSize)
-      const maxX = Math.min(sizeX, land.x + land.baseSize)
-      const maxY = Math.min(sizeY, land.y + land.baseSize)
+      const minX = Math.max(0, land.position.x - land.baseSize)
+      const minY = Math.max(0, land.position.y - land.baseSize)
+      const maxX = Math.min(sizeX, land.position.x + land.baseSize)
+      const maxY = Math.min(sizeY, land.position.y + land.baseSize)
 
-      // this.map.setTerrain(0, 0, minX, minY, maxX, maxY, land.terrainType, 1, 0)
+      // this.map.setTerrain(0, 0, minX, minY, maxX, maxY, land.terrain, 1, 0)
+      // TODO use setTerrain instead of this loop
+      for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+          this.map.get({ x, y }).terrain = land.terrain
+        }
+      }
 
       landSize[land.zone] = (maxY - minY + 1) * (maxX - minX + 1)
 
@@ -78,7 +85,7 @@ class LandGenerator extends Module {
       done = true
       for (let landId = 0; landId < this.lands.length; landId++) {
         const land = this.lands[landId]
-        if (landSize[landId] >= land.landSize) continue
+        if (landSize[landId] >= land.tiles) continue
         const tile = this.popStack(stacks[landId])
         if (!tile) continue
         const { x, y } = tile
@@ -89,10 +96,10 @@ class LandGenerator extends Module {
           continue
         }
 
-        const cost = this.checkTerrainAndZone(land.terrainType, landId, x, y)
+        const cost = this.checkTerrainAndZone(land.terrain, landId, x, y)
         const landCount = this.lands.length
         if (this.searchMapRows[y][x] === landCount && cost > 0) {
-          this.mapRowOffset[y][x].terrain = land.terrainType
+          this.map.get({ x, y }).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
 
           if (x > 0 && this.searchMapRows[y][x - 1] === landCount) {
@@ -124,10 +131,10 @@ class LandGenerator extends Module {
         const { x, y } = node
         if (x > 0 && this.searchMapRows[y][x - 1] === land.zone
            && x < sizeX && this.searchMapRows[y][x + 1] === land.zone) {
-          this.mapRowOffset[y][x].terrain = terrain
+          this.map.get({ x, y }).terrain = land.terrain
         } else if (y > 0 && this.searchMapRows[y - 1][x] === land.zone
            && y < sizeX && this.searchMapRows[y + 1][x] === land.zone) {
-          this.mapRowOffset[y][x].terrain = terrain
+          this.map.get({ x, y }).terrain = land.terrain
         }
       }
     }

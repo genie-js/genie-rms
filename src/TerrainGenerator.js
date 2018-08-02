@@ -123,7 +123,7 @@ class TerrainGenerator extends Module {
           const preference = this.canPlaceTerrainOn(x, y, desc)
           const tile = this.map.get(next)
           if (tile.terrain === desc.baseTerrain && preference !== 0) {
-            let cost = figChance(preference, x, y, desc.clumpingFactor)
+            let cost = figChance(preference, x, y, desc.clumpiness)
             if (desc.avoidPlayerStartAreas) {
               cost += this.searchMapRows[y][x]
             }

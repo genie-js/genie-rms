@@ -1,3 +1,4 @@
+const s = require('strict-dict')
 const Logger = require('./Logger.js')
 const Token = require('./Token.js')
 const CRandom = require('./CRandom.js')
@@ -683,7 +684,7 @@ class Parser {
           land.baseSize = args[0]
           break
         case 73: // clumping_factor
-          land.clumpingFactor = args[0]
+          land.clumpiness = args[0]
           break
         case 86: // min_placement_distance
           land.minPlacementDistance = args[0]
@@ -695,26 +696,28 @@ class Parser {
   }
 
   createLand (zone) {
-    this.lands.push({
+    this.lands.push(s({
       tiles: this.options.size ** 2,
       position: { x: -1, y: -1 },
       terrain: 0,
       baseSize: 3,
       area: 0,
       zone: zone,
-      clumpingFactor: 8,
+      clumpiness: 8,
       leftBorder: 0,
       topBorder: 0,
       rightBorder: this.options.size,
       bottomBorder: this.options.size,
       borderFuzziness: 20,
       minPlacementDistance: -1,
-    })
-    this.objectHotspots.push({
+    }))
+    this.objectHotspots.push(s({
+      x: -1,
+      y: -1,
       // hotspot data
       id: zone > 0 ? 1 : 0,
       playerId: zone
-    })
+    }))
 
     return this.lands.length - 1
   }
@@ -753,19 +756,19 @@ class Parser {
     const { id } = token
     if (!this.insideBlock) {
       if (id === 43) { // create_terrain
-        this.terrains.push({
+        this.terrains.push(s({
           tiles: this.options.size, // NOT squared, just the horizontal amount of tiles
           type: args[0].value,
           numberOfClumps: 1,
           spacingToOtherTerrainTypes: 0,
           baseTerrain: null,
-          clumpingFactor: 20,
+          clumpiness: 20,
           avoidPlayerStartAreas: false,
           minHeight: 0,
           maxHeight: 0,
           flatOnly: false,
           scalingType: 0
-        })
+        }))
         return
       }
     }
@@ -793,7 +796,7 @@ class Parser {
         terrain.spacingToOtherTerrainTypes = args[0]
         break
       case 0x49: // clumping_factor
-        terrain.clumpingFactor = args[0]
+        terrain.clumpiness = args[0]
         break
       case 0x4D:
         terrain.avoidPlayerStartAreas = true
@@ -821,7 +824,7 @@ class Parser {
 
     if (!this.insideBlock) {
       if (id === 48 /* create_object */) {
-        this.objects.push({
+        this.objects.push(s({
           type: args[0] ? args[0].value : 0,
           baseTerrain: -1,
           groupingType: 0,
@@ -836,7 +839,7 @@ class Parser {
           maxDistanceToPlayers: -1,
           minDistanceGroupPlacement: 0,
           maxDistanceToOtherZones: 0
-        })
+        }))
       }
       return
     }
@@ -931,17 +934,17 @@ class Parser {
       }
       const terrains = []
       for (let i = 0; i < 99; i += 1) {
-        terrains.push({
+        terrains.push(s({
           terrainCost: 1,
           terrainSize: 1,
           terrainVariation: 0,
           replaceTerrain: -1
-        })
+        }))
       }
-      this.connections.push({
+      this.connections.push(s({
         terrains,
         type: id
-      })
+      }))
       return
     }
 
@@ -978,14 +981,14 @@ class Parser {
         const [ height ] = args
         this.activeElevations = []
         for (let h = 0; h < height; h += 1) {
-          const elevation = {
+          const elevation = s({
             numberOfTiles: 0,
             height: Math.min(h, 7),
             numberOfClumps: 1,
             // Base level has spacing:2 by default.
             spacing: h === 0 ? 2 : 1,
             baseElevation: h
-          }
+          })
           this.elevations.push(elevation)
           this.activeElevations.push(elevation)
         }

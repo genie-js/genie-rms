@@ -48,6 +48,8 @@ const IF_STATE_FAIL = 1
 const IF_STATE_MATCH = 2
 const IF_STATE_DONE = 3
 
+const { floor, abs } = Math
+
 const hardcodedDrsIncludes = {
   54103: require('./landResources')
 }
@@ -154,6 +156,98 @@ class Parser {
    * Finish parsing, applying the final postprocessing steps.
    */
   end () {
+    // la la
+    const players = []
+    for (let i = 0; i < this.options.numPlayers; i += 1) {
+      players.push({
+        id: i,
+        x: this.random.nextRange(this.options.size),
+        y: this.random.nextRange(this.options.size)
+      })
+    }
+
+    for (const land of this.lands) {
+      if (land.position.x > -1 && land.position.y > -1) {
+        continue
+      }
+
+      const availX = land.rightBorder - land.leftBorder - 2 * land.baseSize
+      const availY = land.bottomBorder - land.topBorder - 2 * land.baseSize
+      let rndAttemptsRemaining = 990
+      while (rndAttemptsRemaining > 0) {
+        let x = this.random.nextRange(availX)
+        let y = this.random.nextRange(availY)
+
+        if (x >= availX * 1/3 && x <= availX * 2/3
+          || y >= availY * 1/3 && y <= availY * 2/3) {
+          x += land.baseSize + land.leftBorder
+          y += land.baseSize + land.topBorder
+
+          let canPlace = true
+          for (const other of this.lands) {
+            if (other !== land && other.position.x > -1 && other.position.y > -1) {
+              const dx = abs(x - other.position.x)
+              const dy = abs(y - other.position.y)
+              let minDistance = land.minPlacementDistance
+              if (minDistance < 0) {
+                minDistance = Math.min(other.area, land.area)
+                  + land.baseSize + other.baseSize
+              }
+
+              if (dx < minDistance && dy < minDistance) {
+                canPlace = false
+                break
+              }
+            }
+          }
+          if (canPlace) {
+            land.position = { x, y }
+            break
+          } else {
+            rndAttemptsRemaining -= 1
+          }
+        }
+      }
+    }
+
+    for (const [i, land] of Object.entries(this.lands)) {
+      this.objectHotspots[i].x = land.position.x
+      this.objectHotspots[i].y = land.position.y
+      // TODO remove this check
+      if (!this.cliffHotspots[i]) continue
+      this.cliffHotspots[i].x = land.position.x
+      this.cliffHotspots[i].y = land.position.y
+      this.cliffHotspots[i].radius = 15
+    }
+
+    if (this.lands.length <= 0) {
+      for (const player of players) {
+        this.objectHotspots.push({
+          x: player.x,
+          y: player.y,
+          id: 1,
+          playerId: player.id + 1
+        })
+        this.terrainHotspots.push({
+          x: player.x,
+          y: player.y,
+          radius: 13,
+          fade: 20
+        })
+        this.cliffHotspots.push({
+          x: player.x,
+          y: player.y,
+          radius: 15
+        })
+        this.elevationHotspots.push({
+          x: player.x,
+          y: player.y,
+          radius: 13,
+          fade: 20
+        })
+      }
+    }
+
     for (const terrain of this.terrains) {
       if (terrain.scalingType === 1) { // scale_by_size
         if (terrain.tiles > 0) {
@@ -170,55 +264,32 @@ class Parser {
       }
     }
 
-    // la la
-    const players = []
-    for (let i = 0; i < this.options.numPlayers; i += 1) {
-      players.push({
-        id: i,
-        x: this.random.nextRange(this.options.size),
-        y: this.random.nextRange(this.options.size)
-      })
+    for (const elev of this.elevations) {
+      if (elev.scalingType === 1) {
+        elev.numberOfTiles *= this.options.size ** 2 / 100
+      } else if (elev.scalingType === 2) {
+        elev.numberOfTiles *= this.options.size ** 2 / 10000
+      }
     }
 
-    /*
-    for (const land of this.lands) {
-      this.objectHotspots.push({
-        x: land.position.x,
-        y: land.position.y,
-      })
-      this.cliffHotspots.push({
-        x: land.position.x,
-        y: land.position.y,
-        radius: 15
-      })
+    for (const objectHs of this.objectHotspots) {
+      if (objectHs.playerId > 0) {
+        this.terrainHotspots.push({
+          x: objectHs.x,
+          y: objectHs.y,
+          radius: 13,
+          fade: 20
+        })
+        this.elevationHotspots.push({
+          x: objectHs.x,
+          y: objectHs.y,
+          radius: 13,
+          fade: 20
+        })
+      }
     }
-    */
 
-    for (const player of players) {
-      this.objectHotspots.push({
-        x: player.x,
-        y: player.y,
-        id: 1,
-        playerId: player.id + 1
-      })
-      this.terrainHotspots.push({
-        x: player.x,
-        y: player.y,
-        radius: 13,
-        fade: 20
-      })
-      this.cliffHotspots.push({
-        x: player.x,
-        y: player.y,
-        radius: 15
-      })
-      this.elevationHotspots.push({
-        x: player.x,
-        y: player.y,
-        radius: 13,
-        fade: 20
-      })
-    }
+    // TODO: resolve connections here
 
     return {
       terrains: this.terrains,
@@ -547,7 +618,7 @@ class Parser {
 
       if (id === 20) { // create_player_lands
         this.activeLands = []
-        for (let i = 0; i < this.options.numPlayers; i += 1) {
+        for (let i = 1; i <= this.options.numPlayers; i += 1) {
           const landId = this.createLand(i)
           this.activeLands.push(landId)
         }
@@ -603,7 +674,7 @@ class Parser {
           // TODO
           break
         case 31: // other_zone_avoidance_distance
-          land.avoidance = args[0]
+          land.area = args[0]
           break
         case 72: // land_id
           land.id = args[0] + 10
@@ -627,8 +698,9 @@ class Parser {
     this.lands.push({
       tiles: this.options.size ** 2,
       position: { x: -1, y: -1 },
+      terrain: 0,
       baseSize: 3,
-      avoidance: 0,
+      area: 0,
       zone: zone,
       clumpingFactor: 8,
       leftBorder: 0,
@@ -637,7 +709,8 @@ class Parser {
       bottomBorder: this.options.size,
       borderFuzziness: 20,
       minPlacementDistance: -1,
-
+    })
+    this.objectHotspots.push({
       // hotspot data
       id: zone > 0 ? 1 : 0,
       playerId: zone

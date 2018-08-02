@@ -12,7 +12,7 @@
         <minimap :code="code" :options="{ randomSeed: seed }"></minimap>
         <p class="flex items-center w-100">
           <span class="mr2">Seed:</span>
-          <input type="number" v-model="seed" class="self-stretch">
+          <input type="number" min="0" max="32767" v-model="seed" class="self-stretch">
           <button @click="randomSeed" class="ml2">(randomize)</button>
         </p>
         <p class="bg-dark-red pa3" style="width: 400px">
@@ -31,15 +31,19 @@
 <script>
 const { codemirror: CodeMirror } = require('vue-codemirror')
 const Minimap = require('./components/Minimap.vue')
+const fs = require('fs')
 
+// Add codemirror language.
 require('./aoe2-rms.js')
+
+const arabiaRms = fs.readFileSync(require.resolve('./Arabia.rms'), 'utf8')
 
 module.exports = {
   name: 'app',
   data () {
     return {
-      code: '/* Write your RMS file here */\n<TERRAIN_GENERATION>\nbase_terrain DIRT\n<LAND_GENERATION>\ncreate_lands {\n\n}',
-      seed: Math.floor(Math.random() * 32767),
+      code: arabiaRms,
+      seed: 32767,
       options: {
         mode: 'aoe2-rms',
         theme: 'monokai',

@@ -1,4 +1,4 @@
-const s = require('strict-dict')
+const s = require('./strictObject')
 const Logger = require('./Logger.js')
 const Token = require('./Token.js')
 const CRandom = require('./CRandom.js')

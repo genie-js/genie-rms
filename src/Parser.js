@@ -160,15 +160,7 @@ class Parser {
    * Finish parsing, applying the final postprocessing steps.
    */
   end () {
-    // la la
-    const players = []
-    for (let i = 0; i < this.options.numPlayers; i += 1) {
-      players.push({
-        id: i,
-        x: this.random.nextRange(this.options.size),
-        y: this.random.nextRange(this.options.size)
-      })
-    }
+    const players = this._placePlayers()
 
     for (const land of this.lands) {
       if (land.position.x > -1 && land.position.y > -1) {
@@ -320,6 +312,104 @@ class Parser {
       elevationHotspots: this.elevationHotspots,
       cliffHotspots: this.cliffHotspots
     }
+  }
+
+  _placePlayers () {
+    const players = []
+    for (let i = 0; i < this.options.numPlayers; i += 1) {
+      players.push({
+        id: i,
+        x: this.random.nextRange(this.options.size),
+        y: this.random.nextRange(this.options.size)
+      })
+    }
+
+    let numPlayerLands = 0 // Separate from number of players for multi TC starts
+
+    let minX = 0
+    let minY = 0
+    let maxX = this.options.size
+    let maxY = this.options.size
+    for (const [id, land] of Object.entries(this.lands)) {
+      const objectHs = this.objectHotspots[id]
+      if (objectHs.playerId <= 0) continue
+      numPlayerLands++
+
+      maxX = Math.min(land.rightBorder - land.leftBorder - 2 * land.baseSize, maxX)
+      maxY = Math.min(land.bottomBorder - land.topBorder - 2 * land.baseSize, maxY)
+      minX = Math.max(land.leftBorder + land.baseSize, minX)
+      minY = Math.max(land.topBorder + land.baseSize, minY)
+    }
+
+    const playerList = []
+    while (playerList.length < 8) {
+      const playerId = Math.min(8, this.random.nextRange(8) + 1)
+      if (playerList.includes(playerId)) continue
+
+      playerList.push(playerId)
+    }
+
+    const visitedLandsList = this.lands.map(() => false)
+    // Player lands are laid out on a squarish circlish
+    // shape on the map. This array contains a single
+    // number for each land determining where on the
+    // shape it is placed.
+    const landPlacement = this.lands.map(() => 0)
+
+    const v10 = 6 * maxX / 10
+    const v11 = 6 * maxY / 10
+    const v12 = 2 * maxX / 10
+    const v47 = v11 + v10
+    // The amount of space on the shape that a single player land takes.
+    const landSizeNumber = 2 * (v11 + v10) / numPlayerLands
+    const v54 = 6 * maxX / 10
+    const v52 = v11
+    const v53 = v10 + v11 + v10
+    const v14 = 0
+
+    let placeNumber = this.random.nextRange(2 * v47)
+    for (let i = 0; i < 8; i++) {
+      for (let id = 0; id < this.lands.length; id++) {
+        if (visitedLandsList[id]) continue
+        if (!this.objectHotspots[id] || this.objectHotspots[id].playerId === 0) continue
+        if (this.objectHotspots[id].playerId === playerList[i]) {
+          landPlacement[id] = placeNumber
+          placeNumber += landSizeNumber
+          if (placeNumber >= 2 * v47) {
+            placeNumber -= 2 * v47
+          }
+          visitedLandsList[id] = true
+        }
+      }
+    }
+
+    this.lands.forEach((land, id) => {
+      const objectHs = this.objectHotspots[id]
+      if (objectHs.playerId === 0) return
+      if (landPlacement[id] < v54) {
+        land.position = {
+          x: floor(minX + v12 + landPlacement[id]),
+          y: floor(minY + v12 / 2)
+        }
+      } else if (landPlacement[id] < v47) {
+        land.position = {
+          x: floor(minX + v54 + v12 / 2),
+          y: floor(minY + v12 + landPlacement[id] - v54)
+        }
+      } else if (landPlacement[id] < v53) {
+        land.position = {
+          x: floor(minX + v54 + v12 + landSizeNumber - landPlacement[id]),
+          y: floor(minY + v11 + v12 / 2)
+        }
+      } else {
+        land.position = {
+          x: floor(minX + v12 / 2),
+          y: floor(minY + v11 + v12 + v53 - landPlacement[id])
+        }
+      }
+    })
+
+    return players
   }
 
   /**

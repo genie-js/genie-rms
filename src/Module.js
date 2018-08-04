@@ -42,7 +42,7 @@ class Module {
   }
 
   createSharedResources () {
-    this.searchMap = new Uint8Array(this.map.sizeX * this.map.sizeY).fill(0)
+    this.searchMap = new Int8Array(this.map.sizeX * this.map.sizeY).fill(0)
     this.searchMapRows = []
     this.nodes = []
     for (let y = 0; y < this.map.sizeY; y++) {

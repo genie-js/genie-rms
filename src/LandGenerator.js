@@ -16,7 +16,7 @@ class LandGenerator extends Module {
    * Apply the base terrain to all tiles on the map.
    */
   _applyBaseTerrain () {
-    const baseTerrain = this.meta.baseTerrain
+    const { baseTerrain } = this.meta
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
         this.map.get({ x, y }).terrain = baseTerrain
@@ -27,16 +27,16 @@ class LandGenerator extends Module {
   generate () {
     this.clearStack()
 
-    this.searchMap.fill(this.lands.length)
+    this.searchMap.fill(-2)
 
     this._applyBaseTerrain()
     this.baseLandGenerate()
 
-    // this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.info.baseTerrain)
+    // this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.meta.baseTerrain)
   }
 
   checkTerrainAndZone (land, x, y) {
-    if (this.searchMapRows[y][x] !== this.lands.length) {
+    if (this.searchMapRows[y][x] !== -2) {
       return 0
     }
 
@@ -70,7 +70,7 @@ class LandGenerator extends Module {
           if (curY >= centerMinY && curY <= centerMaxY &&
               curX >= centerMinX && curX <= centerMaxX) {
             count += 1
-          } else if (this.searchMapRows[curY][curX] < this.lands.length) {
+          } else if (this.searchMapRows[curY][curX] < -2) {
             return 0
           }
         }
@@ -108,12 +108,10 @@ class LandGenerator extends Module {
 
     const stacks = []
     const landSizes = []
-    for (let i = 0; i < this.lands.length; i++) {
-      stacks.push(new StackNode())
-      landSizes.push(0)
-    }
 
     for (const [landId, land] of Object.entries(this.lands)) {
+      stacks.push(new StackNode())
+
       this.logger.log('place base land', landId, land.zone, land.terrain, 'at', land.position)
       const minX = Math.max(0, land.position.x - land.baseSize)
       const minY = Math.max(0, land.position.y - land.baseSize)
@@ -148,18 +146,20 @@ class LandGenerator extends Module {
       }
       if (maxX < sizeX) {
         for (let y = minY; y <= maxY; y++) {
-          this.pushStack(stacks[landId], minX + 1, y, landId, 0)
+          this.pushStack(stacks[landId], maxX + 1, y, landId, 0)
         }
       }
       if (maxY < sizeY) {
         for (let x = minX; x <= maxX; x++) {
-          this.pushStack(stacks[landId], x, minY + 1, landId, 0)
+          this.pushStack(stacks[landId], x, maxY + 1, landId, 0)
         }
       }
     }
 
     this.searchMapRows.forEach((row) => {
-      console.error(row.join(''))
+      console.error(Array.from(row)
+        .map(t => t === -2 ? '-' : t)
+        .join(''))
     })
 
     this.logger.log('distributing clumps', this.lands.map(l => l.tiles))
@@ -192,26 +192,25 @@ class LandGenerator extends Module {
           this.logger.log('skipping', landId, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
           continue
         }
-        const landCount = this.lands.length
-        if (this.searchMapRows[y][x] === landCount && cost > 0) {
+        if (this.searchMapRows[y][x] === -2 && cost > 0) {
           this.logger.log('placing', landId)
 
           this.map.get({ x, y }).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
 
-          if (x > 0 && this.searchMapRows[y][x - 1] === landCount) {
+          if (x > 0 && this.searchMapRows[y][x - 1] === -2) {
             this.pushStack(stacks[landId], x - 1, y,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
-          if (x < sizeX && this.searchMapRows[y][x + 1] === landCount) {
+          if (x < sizeX && this.searchMapRows[y][x + 1] === -2) {
             this.pushStack(stacks[landId], x + 1, y,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
-          if (y > 0 && this.searchMapRows[y - 1][x] === landCount) {
+          if (y > 0 && this.searchMapRows[y - 1][x] === -2) {
             this.pushStack(stacks[landId], x, y - 1,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
-          if (y < sizeY && this.searchMapRows[y + 1][x] === landCount) {
+          if (y < sizeY && this.searchMapRows[y + 1][x] === -2) {
             this.pushStack(stacks[landId], x, y + 1,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }

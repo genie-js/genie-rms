@@ -3,7 +3,6 @@ const Logger = require('./Logger.js')
 const ZoneMapList = require('./ZoneMapList.js')
 const terrainColors = require('./terrainColors.json')
 const unitColors = require('./unitColors.json')
-const pngjs = require('pngjs')
 
 const playerColors = {
   1: '#0000ff',
@@ -310,7 +309,7 @@ class Map {
     }
   }
 
-  getImageData () {
+  render () {
     const imageData = new Uint8ClampedArray(this.sizeX * this.sizeY * 4)
     const centers = []
     for (let y = 0; y < this.sizeY; y++) {
@@ -362,28 +361,6 @@ class Map {
     })
 
     return imageData
-  }
-
-  render () {
-    const imageData = this.getImageData()
-
-    if (pngjs && typeof pngjs.PNG === 'function') {
-      const png = new pngjs.PNG({
-        width: this.sizeX,
-        height: this.sizeY
-      })
-      png.data = global.Buffer.from(imageData)
-
-      return png.pack()
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = this.sizeX
-    canvas.height = this.sizeY
-
-    canvas.getContext('2d').putImageData(new ImageData(imageData, this.sizeX, this.sizeY), 0, 0)
-
-    return canvas
   }
 }
 

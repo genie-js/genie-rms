@@ -14,7 +14,7 @@ module.exports = function generate (code, options) {
   return Promise.resolve()
     .then(() => controller.generate())
     .then(() => {
-      const imageData = controller.map.getImageData()
+      const imageData = controller.map.render()
 
       return {
         warnings,

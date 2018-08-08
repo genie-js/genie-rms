@@ -12,7 +12,7 @@
   "repository": "goto-bus-stop/genie-rms",
   "bugs": "https://github.com/goto-bus-stop/genie-rms/issues",
   "author": "goto-bus-stop <rene@kooi.me>",
-  "main": "lib/RMS",
+  "main": "lib/Controller",
   "browser": {
     "pngjs": false,
     "./lib/Logger.js": "./lib/BrowserLogger.js",

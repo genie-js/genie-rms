@@ -754,7 +754,7 @@ class Parser {
           land.tiles = args[0]
           break
         case 21: // terrain_type
-          land.terrain = args[0].type
+          land.terrain = args[0].value
           break
         case 23: // left_border
           land.leftBorder = args[0] * this.options.size / 100

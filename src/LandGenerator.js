@@ -111,6 +111,7 @@ class LandGenerator extends Module {
 
     for (const [landId, land] of Object.entries(this.lands)) {
       stacks.push(new StackNode())
+      landSizes.push(0)
 
       this.logger.log('place base land', landId, land.zone, land.terrain, 'at', land.position)
       const minX = Math.max(0, land.position.x - land.baseSize)

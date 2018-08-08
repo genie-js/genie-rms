@@ -188,7 +188,7 @@ class Parser {
               const dy = abs(y - other.position.y)
               let minDistance = land.minPlacementDistance
               if (minDistance < 0) {
-                minDistance = Math.min(other.area, land.area) +
+                minDistance = Math.max(other.area, land.area) +
                   land.baseSize + other.baseSize
               }
 
@@ -748,7 +748,7 @@ class Parser {
           }
           break
         case 18: // land_percent
-          land.tiles = args[0] / 100 * this.options.size * this.options.size // TODO multiply * that weird thing in the src
+          land.tiles = (args[0] / 100 * this.activeLands.length) * this.options.size * this.options.size
           break
         case 74: // number_of_tiles
           land.tiles = args[0]

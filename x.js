@@ -11,8 +11,8 @@ controller.generate()
 const imageData = controller.map.render()
 
 const png = new PNG({
-  width: this.sizeX,
-  height: this.sizeY
+  width: controller.map.sizeX,
+  height: controller.map.sizeY
 })
 png.data = Buffer.from(imageData)
 

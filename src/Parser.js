@@ -772,7 +772,8 @@ class Parser {
           land.borderFuzziness = args[0]
           break
         case 28: // zone
-          land.zone = args[0] + 10 // what's this for?
+          // +10 distinguishes this from player zones
+          land.zone = args[0] + 10
           break
         case 29: // set_zone_by_team
           // TODO implement this correctly
@@ -879,7 +880,7 @@ class Parser {
           type: args[0].value,
           numberOfClumps: 1,
           spacingToOtherTerrainTypes: 0,
-          baseTerrain: null,
+          baseTerrain: 0,
           clumpiness: 20,
           avoidPlayerStartAreas: false,
           minHeight: 0,
@@ -1100,11 +1101,12 @@ class Parser {
         this.activeElevations = []
         for (let h = 0; h < height; h += 1) {
           const elevation = s({
-            numberOfTiles: 0,
+            numberOfTiles: this.options.size,
             height: Math.min(h, 7),
             numberOfClumps: 1,
             // Base level has spacing:2 by default.
             spacing: h === 0 ? 2 : 1,
+            baseTerrain: 0,
             baseElevation: h
           })
           this.elevations.push(elevation)

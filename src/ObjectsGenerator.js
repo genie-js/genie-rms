@@ -194,7 +194,6 @@ class ObjectsGenerator extends Module {
     const diffX = maxX - minX
     const diffY = maxY - minY
 
-    this.logger.time('prepareStack')
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
         if (this.searchMapRows[y][x] !== 0) {
@@ -202,11 +201,9 @@ class ObjectsGenerator extends Module {
         }
       }
     }
-    this.logger.timeEnd('prepareStack')
 
     let toGo = floor(diffX * diffY / 4)
     this.logger.log('randomizeStack', toGo)
-    this.logger.time('randomizeStack')
     while (toGo--) {
       const x = minX + this.random.nextRange(diffX - 1)
       const y = minY + this.random.nextRange(diffY - 1)
@@ -215,7 +212,6 @@ class ObjectsGenerator extends Module {
         this.addStackNode(stack, this.nodes[y][x])
       }
     }
-    this.logger.timeEnd('randomizeStack')
 
     this.logger.log('generated', stack.size())
     return stack

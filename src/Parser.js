@@ -217,11 +217,11 @@ class Parser {
     for (const [i, land] of Object.entries(this.lands)) {
       this.objectHotspots[i].x = land.position.x
       this.objectHotspots[i].y = land.position.y
-      // TODO remove this check
-      if (!this.cliffHotspots[i]) continue
-      this.cliffHotspots[i].x = land.position.x
-      this.cliffHotspots[i].y = land.position.y
-      this.cliffHotspots[i].radius = 15
+      this.cliffHotspots.push({
+        x: land.position.x,
+        y: land.position.y,
+        radius: 15
+      })
     }
 
     if (this.lands.length <= 0) {

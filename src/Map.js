@@ -193,8 +193,8 @@ class Map {
     const maxX = Math.min(this.sizeX - 1, x + size)
     const maxY = Math.min(this.sizeY - 1, y + size)
 
-    for (let cx = minX; cx < maxX; cx += 1) {
-      for (let cy = minY; cy < maxY; cy += 1) {
+    for (let cx = minX; cx <= maxX; cx += 1) {
+      for (let cy = minY; cy <= maxY; cy += 1) {
         this.setTerrain(null, cx, cy, terrain, 0, 0)
       }
     }
@@ -282,6 +282,7 @@ class Map {
     this.oldCliffX = cliffX
     this.oldCliffY = cliffY
     this.addCliffEdge(cliffX, cliffY, otherDirection, unk, -1)
+
     return true
   }
 

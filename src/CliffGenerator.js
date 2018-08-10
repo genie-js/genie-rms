@@ -16,7 +16,7 @@ class CliffGenerator extends Module {
   generate () {
     const { minNumber, maxNumber } = this.info
 
-    this.logger.log('setupCliffMaps')
+    this.logger.log('setupCliffMaps', this.hotspots)
     this.setupCliffMaps()
 
     const numberOfCliffs = minNumber + this.random.nextRange(maxNumber - minNumber)
@@ -29,7 +29,7 @@ class CliffGenerator extends Module {
   generateCliff () {
     const { minLength, maxLength, minDistanceBetweenCliffs, curliness } = this.info
     const size = minLength + this.random.nextRange(maxLength - minLength)
-    if (this.validCliffSites.length === 0 || size < 3) return
+    if (this.validCliffSites.size() === 0 || size < 3) return
 
     const cliffStack = new StackNode()
     let x = 0
@@ -66,6 +66,10 @@ class CliffGenerator extends Module {
         next = this.getValidSite(direction - 2, x, y, validHeight)
       }
       if (!next) break
+
+      x = next.x
+      y = next.y
+
       this.pushStack(cliffStack, x, y, 0, 0)
       this.searchMapRows[y][x] = 0
     }
@@ -79,8 +83,8 @@ class CliffGenerator extends Module {
         prevY = node.y
       }
 
-      this.map.doTerrainBrushStroke(3 * prevX + 1, 3 * prevY + 1, 3 * x + 1, 3 * y + 1, 1, 16)
-      this.map.doCliffBrushStroke(3 * prevX + 1, 3 * prevY + 1, 3 * x + 1, 3 * y + 1, 0, 0)
+      this.map.doTerrainBrushStroke(3 * prevX + 1, 3 * prevY + 1, 3 * node.x + 1, 3 * node.y + 1, 1, 16)
+      this.map.doCliffBrushStroke(3 * prevX + 1, 3 * prevY + 1, 3 * node.x + 1, 3 * node.y + 1, 0, 0)
 
       prevX = node.x
       prevY = node.y
@@ -95,7 +99,7 @@ class CliffGenerator extends Module {
 
     this.clearStack()
 
-    const validCliffSites = new StackNode()
+    this.validCliffSites = new StackNode()
     this.searchMap.fill(1)
 
     for (let y = 0; y < height; y += 1) {
@@ -130,7 +134,7 @@ class CliffGenerator extends Module {
         if (isValidCliff) {
           if (this.searchMapRows[y][x]) {
             this.searchMapRows[y][x] = curTerrainHeight + 1
-            this.pushStack(validCliffSites, x, y, 0, 0)
+            this.pushStack(this.validCliffSites, x, y, 0, 0)
           }
         } else {
           if (isWaterArea) {
@@ -158,9 +162,7 @@ class CliffGenerator extends Module {
       }
     }
 
-    this.randomizeStack(validCliffSites)
-
-    this.validCliffSites = validCliffSites
+    this.randomizeStack(this.validCliffSites)
   }
 
   /**

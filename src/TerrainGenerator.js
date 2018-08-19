@@ -28,7 +28,7 @@ class TerrainGenerator extends Module {
 
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        const tile = this.map.get({ x, y })
+        const tile = this.map.get(x, y)
         if (tile.terrain === 16) {
           tile.terrain = 0
         }
@@ -65,8 +65,8 @@ class TerrainGenerator extends Module {
     let next
 
     while (clumpIndex < numberOfClumps && (next = this.popStack(stack))) {
-      const tile = this.map.get(next)
       const { x, y } = next
+      const tile = this.map.get(x, y)
       if (tile.terrain !== desc.baseTerrain) continue
       if (this.canPlaceTerrainOn(x, y, desc) === 0) continue
       if (desc.avoidPlayerStartAreas && this.searchMapRows[y][x] !== 0) continue
@@ -104,7 +104,7 @@ class TerrainGenerator extends Module {
           }
 
           const preference = this.canPlaceTerrainOn(x, y, desc)
-          const tile = this.map.get(next)
+          const tile = this.map.get(x, y)
           if (tile.terrain === desc.baseTerrain && preference !== 0) {
             let cost = figChance(preference, x, y, desc.clumpiness)
             if (desc.avoidPlayerStartAreas) {
@@ -113,16 +113,16 @@ class TerrainGenerator extends Module {
 
             tile.terrain = desc.type
 
-            if (x > 0 && this.map.get({ x: x - 1, y }).terrain === desc.baseTerrain) {
+            if (x > 0 && this.map.get(x - 1, y).terrain === desc.baseTerrain) {
               this.pushStack(clump, x - 1, y, 0, cost + this.random.nextRange(100))
             }
-            if (x < this.map.sizeX - 1 && this.map.get({ x: x + 1, y }).terrain === desc.baseTerrain) {
+            if (x < this.map.sizeX - 1 && this.map.get(x + 1, y).terrain === desc.baseTerrain) {
               this.pushStack(clump, x + 1, y, 0, cost + this.random.nextRange(100))
             }
-            if (y > 0 && this.map.get({ x, y: y - 1 }).terrain === desc.baseTerrain) {
+            if (y > 0 && this.map.get(x, y - 1).terrain === desc.baseTerrain) {
               this.pushStack(clump, x, y - 1, 0, cost + this.random.nextRange(100))
             }
-            if (y < this.map.sizeY - 1 && this.map.get({ x, y: y + 1 }).terrain === desc.baseTerrain) {
+            if (y < this.map.sizeY - 1 && this.map.get(x, y + 1).terrain === desc.baseTerrain) {
               this.pushStack(clump, x, y + 1, 0, cost + this.random.nextRange(100))
             }
 
@@ -163,7 +163,7 @@ class TerrainGenerator extends Module {
 
     for (let y = 0; y < map.sizeY; y++) {
       for (let x = 0; x < map.sizeX; x++) {
-        const tile = map.get({ x, y })
+        const tile = map.get(x, y)
         if (isIce(tile.terrain) && this._isBorderedByWater(x, y)) {
           tile.terrain = 37 // Ice Beach
         } else if (tile.terrain !== 2) { // Beach
@@ -200,12 +200,12 @@ class TerrainGenerator extends Module {
   }
 
   _isWaterTile (x, y) {
-    const tile = this.map.get({ x, y })
+    const tile = this.map.get(x, y)
     return isWater(tile.terrain)
   }
 
   canPlaceTerrainOn (x, y, desc) {
-    const tile = this.map.get({ x, y })
+    const tile = this.map.get(x, y)
     if (tile.elevation < desc.minHeight || tile.elevation > desc.maxHeight) {
       return 0
     }
@@ -218,7 +218,7 @@ class TerrainGenerator extends Module {
 
       for (let cy = minY; cy < maxY; cy += 1) {
         for (let cx = minX; cx < maxX; cx += 1) {
-          const tile = this.map.get({ x: cx, y: cy })
+          const tile = this.map.get(cx, cy)
           if (tile.terrain !== desc.baseTerrain && tile.terrain !== desc.type) {
             return 0
           }
@@ -236,7 +236,7 @@ class TerrainGenerator extends Module {
     let score = 1
     for (let cy = minY; cy < maxY; cy += 1) {
       for (let cx = minX; cx < maxX; cx += 1) {
-        const tile = this.map.get({ x: cx, y: cy })
+        const tile = this.map.get(cx, cy)
         if (tile.terrain === desc.type) {
           score += 1
         }

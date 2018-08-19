@@ -28,7 +28,7 @@ module.exports = class ZoneMap {
         if (this.zoneMapRows[y][x] !== -1) continue
 
         this.zoneMapRows[y][x] = zone
-        const { terrain } = this.map.get({ x, y })
+        const { terrain } = this.map.get(x, y)
         const group = this.terrainRules[terrain] <= 0 ? 0 : 1
 
         this.doZoneMapArea(x, y, group, zone)
@@ -43,7 +43,7 @@ module.exports = class ZoneMap {
   _checkZoneXY (zoneQueue, x, y, group, zone) {
     const curZone = this.zoneMapRows[y][x]
     if (curZone === -1) {
-      const { terrain } = this.map.get({ x, y })
+      const { terrain } = this.map.get(x, y)
       const curGroup = this.terrainRules[terrain] <= 0 ? 0 : 1
       if (curGroup === group) {
         this.zoneMapRows[y][x] = zone
@@ -116,7 +116,7 @@ module.exports = class ZoneMap {
 
     for (let x = minX; x < maxX; x++) {
       for (let y = minY; y < maxY; y++) {
-        const { terrain } = this.map.get({ x, y })
+        const { terrain } = this.map.get(x, y)
         if (terrain === type1 || terrain === type2) {
           const dist = (p.x - x) ** 2 + (p.y - y) ** 2
           if (dist < closestDist) {

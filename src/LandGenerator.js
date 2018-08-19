@@ -19,7 +19,7 @@ class LandGenerator extends Module {
     const { baseTerrain } = this.meta
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        this.map.get({ x, y }).terrain = baseTerrain
+        this.map.get(x, y).terrain = baseTerrain
       }
     }
   }
@@ -123,7 +123,7 @@ class LandGenerator extends Module {
       // TODO use setTerrain instead of this loop
       for (let y = minY; y <= maxY; y++) {
         for (let x = minX; x <= maxX; x++) {
-          this.map.get({ x, y }).terrain = land.terrain
+          this.map.get(x, y).terrain = land.terrain
         }
       }
 
@@ -196,7 +196,7 @@ class LandGenerator extends Module {
         if (this.searchMapRows[y][x] === -2 && cost > 0) {
           this.logger.log('placing', landId)
 
-          this.map.get({ x, y }).terrain = land.terrain
+          this.map.get(x, y).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
 
           if (x > 0 && this.searchMapRows[y][x - 1] === -2) {
@@ -230,10 +230,10 @@ class LandGenerator extends Module {
         const { x, y } = node
         if (x > 0 && this.searchMapRows[y][x - 1] === land.zone &&
            x < sizeX && this.searchMapRows[y][x + 1] === land.zone) {
-          this.map.get({ x, y }).terrain = land.terrain
+          this.map.get(x, y).terrain = land.terrain
         } else if (y > 0 && this.searchMapRows[y - 1][x] === land.zone &&
            y < sizeX && this.searchMapRows[y + 1][x] === land.zone) {
-          this.map.get({ x, y }).terrain = land.terrain
+          this.map.get(x, y).terrain = land.terrain
         }
       }
     }

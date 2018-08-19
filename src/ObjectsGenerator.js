@@ -86,7 +86,7 @@ class ObjectsGenerator extends Module {
       if (!this._checkRestrictions(tile, maxDistanceToOtherZones, floor(maxDistanceToOtherZones * 10 / 14))) {
         continue
       }
-      if (desc.baseTerrain !== -1 && this.map.get(tile).terrain !== desc.baseTerrain) {
+      if (desc.baseTerrain !== -1 && this.map.get(tile.x, tile.y).terrain !== desc.baseTerrain) {
         continue
       }
 
@@ -150,7 +150,7 @@ class ObjectsGenerator extends Module {
       if (!this._checkRestrictions(next, maxDistanceToOtherZones, floor(maxDistanceToOtherZones * 10 / 14))) {
         continue
       }
-      if (desc.baseTerrain !== -1 && this.map.get(next).terrain !== desc.baseTerrain) {
+      if (desc.baseTerrain !== -1 && this.map.get(next.x, next.y).terrain !== desc.baseTerrain) {
         continue
       }
 
@@ -228,7 +228,7 @@ class ObjectsGenerator extends Module {
     let toPlace = Math.max(1, this.random.nextRange(desc.groupVariance * 2) + desc.amount - desc.groupVariance)
     let next
     while ((next = this.popStack(stack)) && toPlace > 0) {
-      const { terrain } = this.map.get(next)
+      const { terrain } = this.map.get(next.x, next.y)
       if (desc.baseTerrain !== -1 && terrain !== desc.baseTerrain) {
         continue
       }

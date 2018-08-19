@@ -13,7 +13,7 @@ class ElevationGenerator extends Module {
   _resetElevation () {
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        const tile = this.map.get({ x, y })
+        const tile = this.map.get(x, y)
         tile.elevation = 0
       }
     }
@@ -73,7 +73,7 @@ class ElevationGenerator extends Module {
       if (!node) break
       if (this._getModifier(node.x, node.y) === 0 &&
           this._matchesTerrain(node.x, node.y, baseTerrain, baseElevation, spacing)) {
-        const tile = this.map.get(node)
+        const tile = this.map.get(node.x, node.y)
         tile.elevation = height
 
         if (node.x > 0) this.pushStack(clump, node.x - 1, node.y, 0, 0)
@@ -89,7 +89,7 @@ class ElevationGenerator extends Module {
 
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {
-        const tile = this.map.get({ x, y })
+        const tile = this.map.get(x, y)
         if (tile.terrain === baseTerrain && tile.elevation === baseElevation && this._getModifier(x, y) === 0) {
           this.addStackNode(stack, this.nodes[y][x])
         }

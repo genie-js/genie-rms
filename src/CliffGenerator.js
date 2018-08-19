@@ -110,10 +110,7 @@ class CliffGenerator extends Module {
 
         for (let cy = 0; cy < 3; cy += 1) {
           for (let cx = 0; cx < 3; cx += 1) {
-            const { terrain, elevation } = this.map.get({
-              x: x + cx,
-              y: y + cy
-            })
+            const { terrain, elevation } = this.map.get(x + cx, y + cy)
             if (terrain === 0 || terrain === 6) {
               if (curTerrainHeight === -1) {
                 curTerrainHeight = elevation

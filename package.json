@@ -19,14 +19,14 @@
     "./src/Logger.js": "./src/BrowserLogger.js"
   },
   "dependencies": {
-    "awestruct": "^0.12.3",
+    "awestruct": "^1.0.0",
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
-    "pngjs": "^3.3.2"
+    "pngjs": "^3.3.3"
   },
   "devDependencies": {
-    "brfs": "^1.4.3",
-    "buble": "^0.15.2",
+    "brfs": "^2.0.1",
+    "buble": "^0.19.3",
     "standard": "^11.0.1"
   },
   "scripts": {

@@ -28,4 +28,4 @@ parser.write(fs.readFileSync('./my-script.rms', 'utf-8'))
 
 ## License
 
-[MIT](./LICENSE)
+[GPL-3.0](./LICENSE.md)

@@ -1,23 +1,13 @@
 {
   "name": "genie-rms",
   "version": "0.0.0",
-  "license": "MIT",
-  "keywords": [
-    "rms",
-    "random map",
-    "random map script",
-    "genie",
-    "age of empires"
-  ],
-  "repository": "goto-bus-stop/genie-rms",
-  "bugs": "https://github.com/goto-bus-stop/genie-rms/issues",
   "author": "goto-bus-stop <rene@kooi.me>",
-  "main": "lib/Controller",
   "browser": {
     "pngjs": false,
     "./lib/Logger.js": "./lib/BrowserLogger.js",
     "./src/Logger.js": "./src/BrowserLogger.js"
   },
+  "bugs": "https://github.com/goto-bus-stop/genie-rms/issues",
   "dependencies": {
     "awestruct": "^1.0.0",
     "chalk": "^2.4.1",
@@ -29,11 +19,21 @@
     "buble": "^0.19.3",
     "standard": "^11.0.1"
   },
+  "keywords": [
+    "age of empires",
+    "genie",
+    "random map",
+    "random map script",
+    "rms"
+  ],
+  "license": "GPL-3.0",
+  "main": "lib/Controller",
+  "repository": "goto-bus-stop/genie-rms",
   "scripts": {
-    "test": "standard src/**/*.js",
+    "build": "buble src --output lib -y dangerousForOf -m && npm run build:json && npm run build:lres && npm run build:rmdef",
+    "build:json": "cp src/*.json lib/",
     "build:lres": "brfs src/landResources.js > lib/landResources.js",
     "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
-    "build:json": "cp src/*.json lib/",
-    "build": "buble src --output lib -y dangerousForOf -m && npm run build:json && npm run build:lres && npm run build:rmdef"
+    "test": "standard src/**/*.js"
   }
 }

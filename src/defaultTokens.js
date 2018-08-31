@@ -1,7 +1,14 @@
-// Generated from the list of tokens in age2_x1.exe
+// Format:
 // [name, id, type, argTypes]
+// argtype 0 = end of arg list
+// argtype 1 = word
+// argtype 2 = number
+// argtype 3 = token (#const-d)
+// argtype 4 = token (#define-d)
+// argtype 5 = file
 
-module.exports = [
+// Generated from the list of tokens in age2_x1.exe
+exports.base = [
   ['#define', 0, 0, [1, 0, 0, 0]],
   ['#undefine', 1, 0, [1, 0, 0, 0]],
   ['#const', 2, 0, [1, 2, 0, 0]],
@@ -95,4 +102,25 @@ module.exports = [
   ['max_distance_to_other_zones', 91, 0, [2, 0, 0, 0]],
   ['#include_drs', 92, 0, [5, 2, 0, 0]],
   ['temp_min_distance_group_placement', 93, 0, [2, 0, 0, 0]]
+]
+
+// TODO check if these have IDs at all
+// + check the argtypes
+exports.userpatch14 = [
+  ['grouped_by_team', 1001, 0, [0, 0, 0, 0]],
+  ['nomad_resources', 1002, 0, [0, 0, 0, 0]],
+  ['base_elevation', 1003, 0, [2, 0, 0, 0]],
+  ['resource_delta', 1004, 0, [2, 0, 0, 0]]
+]
+
+// TODO check if these have IDs at all
+// + check the argtypes
+exports.userpatch15 = [
+  ['weather_type', 2001, 0, [2, 2, 2, 2]],
+  ['direct_placement', 2002, 0, [0, 0, 0, 0]],
+  ['effect_amount', 2003, 0, [2, 0, 0, 0]],
+  ['effect_percent', 2004, 0, [2, 0, 0, 0]],
+  ['guard_state', 2005, 0, [2, 0, 0, 0]],
+  ['terrain_state', 2005, 0, [2, 0, 0, 0]],
+  ['assign_to', 2006, 0, [0, 0, 0, 0]]
 ]

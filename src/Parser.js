@@ -73,7 +73,9 @@ class Parser {
     this.random = this.options.random || new CRandom(Date.now())
 
     this.tokenTypes = []
-    for (const token of defaultTokens) {
+    // TODO add DLC, UserPatch tokens depending on compatibility option
+    const activeTokens = [...defaultTokens.base]
+    for (const token of activeTokens) {
       this.defineToken(...token)
     }
 

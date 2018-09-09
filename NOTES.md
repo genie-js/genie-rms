@@ -16,3 +16,34 @@ Not all sections are always run. That depends on whether they were included in t
 There are two exceptions to that rule:
  - If a Terrains section exists, the Objects generator is also always run
  - If a Lands section exists, the Terrains generator is also always run (and therefore the Objects generator)
+
+## Parser
+
+The parser is built on a dynamic token list. A token is a word in the source code that means something. Each token has an ID, a type, a value, and an argument types list.
+
+The argument types list always contains 4 elements. Tokens taking fewer than 4 arguments will list the null argument type to pad that out. There are 6 argument types:
+
+0. No argument / null argument
+1. Word
+2. Number
+3. Constant
+4. Optional constant
+5. Filename (used in #include)
+
+The difference between Constants and Optional constants is subtle. It changes how the parser treats absence. Optional constants are used as `if` and `elseif` arguments: a constant referenced by that word existing means "true", and it not existing means "false". i.e., if the parser does not recognise the word, it keeps executing normally. However, when "normal" Constants do not exist, it results in a parse error. The RMS parser does not show parse errors to the user, but instead restarts-ish parsing at the next token.
+
+For example, the `#define` token has ID 0, and argument types [1, 0, 0, 0]. The `land_position` token has ID 71 and argument types [2, 2, 0, 0]. The number of non-0 argument types is important for parsing. The RMS parser assumes the next command begins when the argument type is 0. So, the single-line string `#define X land_position 2 2` will parse as two commands.
+
+(...)
+
+## Generators
+
+There are some concepts that are used extensively in all generators.
+
+### Search Map
+
+The Search Map is an array containing a single byte for each tile on the map. This is used during the generation process to store information, like the land ID during land generation, or whether objects can be placed on a specific tile's terrain during object generation.
+
+### Map Stack
+
+The Map Stack in essence is a doubly linked list of map tiles, with an optional associated "cost". There is a single node for each tile on the map. Most generators work by pushing valid map tiles to a Map Stack, and then later popping the tiles that will actually be used.

@@ -1,4 +1,3 @@
-/* global ImageData */
 const Logger = require('./Logger.js')
 const ZoneMapList = require('./ZoneMapList.js')
 const terrainColors = require('./terrainColors.json')

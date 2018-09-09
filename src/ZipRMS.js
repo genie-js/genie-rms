@@ -1,8 +1,8 @@
-const Struct = require('awestruct')
+const struct = require('awestruct')
 const ScriptController = require('./Controller.js')
-const t = Struct.types
+const t = struct.types
 
-const localFileHeader = Struct([
+const LocalFileHeader = struct([
   ['signature', t.uint32],
   ['version', t.uint16],
   ['flag', t.uint16],
@@ -18,7 +18,8 @@ const localFileHeader = Struct([
   ['extra', t.buffer('extraLength')]
 ])
 
-const directoryHeader = Struct([
+// eslint-disable-next-line no-unused-vars
+const DirectoryHeader = struct([
   ['signature', t.uint32],
   ['version', t.uint16],
   ['flag', t.uint16],
@@ -40,7 +41,8 @@ const directoryHeader = Struct([
   ['comment', t.string('commentLength')]
 ])
 
-const endOfDirectory = Struct([
+// eslint-disable-next-line no-unused-vars
+const EndOfDirectory = struct([
   ['signature', t.uint32],
   ['diskNumber', t.uint16],
   ['centralDirectoryDisk', t.uint16],
@@ -61,7 +63,7 @@ class ZipRMS {
     const opts = { buf: this.buffer, offset: 0 }
     const files = []
     while (opts.buf.readUInt32LE(opts.offset) === 0x04034b50 /* local file magic */) {
-      const file = localFileHeader(opts)
+      const file = LocalFileHeader(opts)
       if (file.compression !== 0) {
         throw new Error('Zip RMS files must not be compressed')
       }
@@ -77,9 +79,33 @@ class ZipRMS {
     this.files = files
   }
 
-  getController () {
+  getScenario () {
+    const file = this.files.find((file) => file.type === 'scx')
+    return file ? file.buffer : null
+  }
+
+  getScript () {
     const file = this.files.find((file) => file.type === 'rms')
-    return new ScriptController(file.buffer.toString('utf8'))
+    return file.buffer.toString('utf8')
+  }
+
+  getController () {
+    const script = this.getScript()
+    return new ScriptController(script)
+  }
+
+  getTerrains () {
+    const files = this.files.filter((file) => file.type === 'slp')
+    const terrains = Object.create(null)
+    for (const file of files) {
+      const id = parseInt(file.name.replace(/\.slp$/, ''), 10)
+      if (id < 15000 || id >= 15050) {
+        // TODO issue a warning
+        continue
+      }
+      terrains[id] = file.buffer
+    }
+    return terrains
   }
 }
 

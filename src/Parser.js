@@ -365,9 +365,7 @@ class Parser {
     // The amount of space on the shape that a single player land takes.
     const landSizeNumber = 2 * (v11 + v10) / numPlayerLands
     const v54 = 6 * maxX / 10
-    const v52 = v11
     const v53 = v10 + v11 + v10
-    const v14 = 0
 
     let placeNumber = this.random.nextRange(2 * v47)
     for (let i = 0; i < 8; i++) {

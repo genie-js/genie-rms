@@ -3,9 +3,9 @@ const { promisify } = require('util')
 const readFile = promisify(fs.readFile)
 const finished = promisify(require('stream').finished)
 const { PNG } = require('pngjs')
-const ScriptController = require('./src/Controller')
+const { Controller } = require('./src')
 
-class StepsController extends ScriptController {
+class StepsController extends Controller {
   addModule (module) {
     super.addModule(module)
 

@@ -34,14 +34,19 @@ npm install genie-rms
 ## Usage
 
 ```js
-const { Parser } = require('genie-rms')
+const { Parser, CRandom } = require('genie-rms')
 
-const parser = new Parser()
+const seed = 32767
+const parser = new Parser({
+  random: new CRandom(seed)
+})
 
 // Read the default random map constants.
 // `random_map.def` is file 54000 in gamedata_x1.drs.
 parser.write(fs.readFileSync('./random_map.def', 'utf-8'))
 parser.write(fs.readFileSync('./my-script.rms', 'utf-8'))
+const result = parser.end()
+console.log(result)
 ```
 
 ## Credits

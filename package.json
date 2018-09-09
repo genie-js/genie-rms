@@ -27,7 +27,7 @@
     "rms"
   ],
   "license": "GPL-3.0",
-  "main": "lib/Controller",
+  "main": "lib",
   "repository": "goto-bus-stop/genie-rms",
   "scripts": {
     "build": "buble src --output lib -y dangerousForOf -m && npm run build:json && npm run build:lres && npm run build:rmdef",

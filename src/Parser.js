@@ -525,25 +525,22 @@ class Parser {
     last.value = value
   }
 
-  parseToken () {
-    const token = this.currentToken
-    const {
-      id,
-      argTypes
-    } = token
-
-    if (id === TOK_COMMENT_OPEN) { // /*
+  _parseComment (token) {
+    if (token.id === TOK_COMMENT_OPEN) { // /*
       this.commentDepth += 1
-      return
-    } else if (id === TOK_COMMENT_CLOSE) { // */
+      return true
+    }
+    if (token.id === TOK_COMMENT_CLOSE) { // */
       this.commentDepth -= 1
-      return
+      return true
     }
 
     if (this.commentDepth > 0) {
-      return
+      return true
     }
+  }
 
+  _parseArgs (argTypes) {
     const args = []
     for (const argType of argTypes) {
       if (argType === ARGTYPE_NONE) break // Stop parsing arguments.
@@ -552,156 +549,178 @@ class Parser {
       if (argType === ARGTYPE_TOKEN) {
         const value = this.readToken()
         // This one is only added to the arguments list when it exists in src.
-        // Not sure why this is different from ARGTYE_TOKEN2, because it seems like
+        // Not sure why this is different from ARGTYPE_TOKEN2, because it seems like
         // src attempts to use it anyway during the generation phase.
-        if (typeof value === 'object') args.push(value)
+        args.push(value || new Token(0, 0, 0, 0, []))
       }
       if (argType === ARGTYPE_TOKEN2) args.push(this.readToken())
       if (argType === ARGTYPE_FILE) args.push(this.readString())
     }
-    this.currentArgs = args
+    return args
+  }
 
-    if (this.ifState === IF_STATE_MATCH) {
-      switch (id) {
-        case TOK_START_RANDOM: // start_random
-          if (this.randomStack.length > 0 && this.randomState !== RANDOM_STATE_MATCH) {
-            this.randomStack.push({
-              value: 0,
-              state: RANDOM_STATE_DEAD
-            })
-            break
-          }
+  _parseRandom (token) {
+    switch (token.id) {
+      case TOK_START_RANDOM: // start_random
+        if (this.randomStack.length > 0 && this.randomState !== RANDOM_STATE_MATCH) {
           this.randomStack.push({
-            value: this.random.nextRange(100),
-            state: RANDOM_STATE_PRE
+            value: 0,
+            state: RANDOM_STATE_DEAD
           })
           break
-        case TOK_PERCENT_CHANCE: // percent_chance
-          if (this.randomState === RANDOM_STATE_PRE) {
-            const [ percent ] = args
-            if (this.randomValue > percent) {
-              this.randomValue -= percent
-            } else {
-              this.log(`Entering percent_chance: ${percent}%`)
-              // Take this branch!
-              this.randomState = RANDOM_STATE_MATCH
-            }
-          } else if (this.randomState !== RANDOM_STATE_DEAD) {
-            this.randomState = RANDOM_STATE_POST
+        }
+        this.randomStack.push({
+          value: this.random.nextRange(100),
+          state: RANDOM_STATE_PRE
+        })
+        break
+      case TOK_PERCENT_CHANCE: // percent_chance
+        if (this.randomState === RANDOM_STATE_PRE) {
+          const [ percent ] = this.currentArgs
+          if (this.randomValue > percent) {
+            this.randomValue -= percent
+          } else {
+            this.log(`Entering percent_chance: ${percent}%`)
+            // Take this branch!
+            this.randomState = RANDOM_STATE_MATCH
           }
+        } else if (this.randomState !== RANDOM_STATE_DEAD) {
+          this.randomState = RANDOM_STATE_POST
+        }
+        break
+      case TOK_END_RANDOM: // end_random
+        if (this.randomState === RANDOM_STATE_PRE) {
+          this.warn('Non-exhaustive random branch')
+        }
+        this.randomStack.pop()
+        break
+    }
+  }
+
+  _parseIf (token) {
+    switch (token.id) {
+      case TOK_IF: { // if
+        // We can only take this branch if we are already matching,
+        // but need to keep track of if block depth in order to
+        // balance nested ifs correctly.
+        if (this.ifState !== IF_STATE_MATCH) {
+          this.ifStack.push(IF_STATE_DEAD)
           break
-        case TOK_END_RANDOM: // end_random
-          if (this.randomState === RANDOM_STATE_PRE) {
-            this.warn('Non-exhaustive random branch')
-          }
-          this.randomStack.pop()
-          break
+        }
+
+        const [ condition ] = this.currentArgs
+        this.ifStack.push(condition ? IF_STATE_MATCH : IF_STATE_FAIL)
+        if (condition) this.log('Entering if condition', this.ifState)
+        else this.log('Skipping if condition', this.ifState)
+        break
       }
+      case TOK_ELIF: // elseif
+        // FIXME this might be wrong if this `if/elseif/endif` sequence is nested
+        // within an `if` statement with a failing condition, since it would be checking
+        // the outer if?
+        // Need to check src
+        if (this.ifStack.length > 0) {
+          const [ condition ] = this.currentArgs
+          if (this.ifState === IF_STATE_FAIL) {
+            this.ifState = condition ? IF_STATE_MATCH : IF_STATE_FAIL
+          } else if (this.ifState === IF_STATE_MATCH) {
+            this.ifState = IF_STATE_DONE
+          }
+        }
+        break
+      case TOK_ELSE: // else
+        if (this.ifStack.length > 0) {
+          if (this.ifState === IF_STATE_FAIL) {
+            this.ifState = IF_STATE_MATCH
+          } else {
+            this.ifState = IF_STATE_DONE
+          }
+        }
+        break
+      case TOK_ENDIF: // endif
+        if (this.ifStack.length > 0) {
+          this.ifStack.pop()
+        }
+        break
+    }
+  }
+
+  _parseCommand (token) {
+    switch (token.id) {
+      case TOK_DEFINE: { // #define
+        const [ name ] = this.currentArgs
+        this.log('Defining constant', this.logger.cyan(name))
+        this.defineUserToken(name, TOKEN_TYPE_DEFINE, 0,
+          [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
+        break
+      }
+      case TOK_CONST: { // #const
+        const [ name, value ] = this.currentArgs
+        this.log('Defining constant', this.logger.cyan(name), value)
+        this.defineUserToken(name, TOKEN_TYPE_CONST, value,
+          [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
+        break
+      }
+      case TOK_INCLUDE: // #include
+        throw this.error('#include is not supported')
+      case TOK_INCLUDE_DRS: { // #include_drs
+        const [ , id ] = this.currentArgs
+        if (id in hardcodedDrsIncludes) {
+          this.includeCode(hardcodedDrsIncludes[id])
+        } else {
+          throw this.error('#include_drs is not supported')
+        }
+        break
+      }
+      case TOK_PLAYER_SETUP: // <PLAYER_SETUP>
+      case TOK_LAND_GENERATION: // <LAND_GENERATION>
+      case TOK_CLIFF_GENERATION: // <CLIFF_GENERATION>
+      case TOK_TERRAIN_GENERATION: // <TERRAIN_GENERATION>
+      case TOK_OBJECTS_GENERATION: // <OBJECTS_GENERATION>
+      case TOK_CONNECTION_GENERATION: // <CONNECTION_GENERATION>
+      case TOK_ELEVATION_GENERATION: // <ELEVATION_GENERATION>
+        this.parseSectionHeader(token.id)
+        break
+
+      case TOK_BLOCK_OPEN: // {
+        this.insideBlock = true
+        break
+      case TOK_BLOCK_CLOSE: // }
+        this.insideBlock = false
+        break
+      default:
+        if (token.id <= 9) break
+        switch (this.stage) {
+          case TOK_PLAYER_SETUP: this.parsePlayerSetup(token, this.currentArgs); break
+          case TOK_LAND_GENERATION: this.parseLandGeneration(token, this.currentArgs); break
+          case TOK_CLIFF_GENERATION: this.parseCliffGeneration(token, this.currentArgs); break
+          case TOK_TERRAIN_GENERATION: this.parseTerrainGeneration(token, this.currentArgs); break
+          case TOK_OBJECTS_GENERATION: this.parseObjectsGeneration(token, this.currentArgs); break
+          case TOK_CONNECTION_GENERATION: this.parseConnectionGeneration(token, this.currentArgs); break
+          case TOK_ELEVATION_GENERATION: this.parseElevationGeneration(token, this.currentArgs); break
+        }
+    }
+  }
+
+  parseToken () {
+    const token = this.currentToken
+
+    if (this._parseComment(token)) {
+      return
+    }
+
+    this.currentArgs = this._parseArgs(token.argTypes)
+
+    if (this.ifState === IF_STATE_MATCH) {
+      this._parseRandom(token)
     }
 
     if (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH) {
-      switch (id) {
-        case TOK_IF: { // if
-          // We can only take this branch if we are already matching,
-          // but need to keep track of if block depth in order to
-          // balance nested ifs correctly.
-          if (this.ifState !== IF_STATE_MATCH) {
-            this.ifStack.push(IF_STATE_DEAD)
-            break
-          }
-
-          const [ condition ] = args
-          this.ifStack.push(condition ? IF_STATE_MATCH : IF_STATE_FAIL)
-          if (condition) this.log('Entering if condition', this.ifState)
-          else this.log('Skipping if condition', this.ifState)
-          break
-        }
-        case TOK_ELIF: // elseif
-          // FIXME this might be wrong if this `if/elseif/endif` sequence is nested
-          // within an `if` statement with a failing condition, since it would be checking
-          // the outer if?
-          // Need to check src
-          if (this.ifStack.length > 0) {
-            const [ condition ] = args
-            if (this.ifState === IF_STATE_FAIL) {
-              this.ifState = condition ? IF_STATE_MATCH : IF_STATE_FAIL
-            } else if (this.ifState === IF_STATE_MATCH) {
-              this.ifState = IF_STATE_DONE
-            }
-          }
-          break
-        case TOK_ELSE: // else
-          if (this.ifStack.length > 0) {
-            if (this.ifState === IF_STATE_FAIL) {
-              this.ifState = IF_STATE_MATCH
-            } else {
-              this.ifState = IF_STATE_DONE
-            }
-          }
-          break
-        case TOK_ENDIF: // endif
-          if (this.ifStack.length > 0) {
-            this.ifStack.pop()
-          }
-          break
-      }
+      this._parseIf(token)
     }
 
     if (this.ifState === IF_STATE_MATCH && (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH)) {
-      switch (id) {
-        case TOK_DEFINE: { // #define
-          const [ name ] = args
-          this.log('Defining constant', this.logger.cyan(name))
-          this.defineUserToken(name, TOKEN_TYPE_DEFINE, 0,
-            [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
-          break
-        }
-        case TOK_CONST: { // #const
-          const [ name, value ] = args
-          this.log('Defining constant', this.logger.cyan(name), value)
-          this.defineUserToken(name, TOKEN_TYPE_CONST, value,
-            [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
-          break
-        }
-        case TOK_INCLUDE: // #include
-          throw this.error('#include is not supported')
-        case TOK_INCLUDE_DRS: { // #include_drs
-          const [ , id ] = args
-          if (id in hardcodedDrsIncludes) {
-            this.includeCode(hardcodedDrsIncludes[id])
-          } else {
-            throw this.error('#include_drs is not supported')
-          }
-          break
-        }
-        case TOK_PLAYER_SETUP: // <PLAYER_SETUP>
-        case TOK_LAND_GENERATION: // <LAND_GENERATION>
-        case TOK_CLIFF_GENERATION: // <CLIFF_GENERATION>
-        case TOK_TERRAIN_GENERATION: // <TERRAIN_GENERATION>
-        case TOK_OBJECTS_GENERATION: // <OBJECTS_GENERATION>
-        case TOK_CONNECTION_GENERATION: // <CONNECTION_GENERATION>
-        case TOK_ELEVATION_GENERATION: // <ELEVATION_GENERATION>
-          this.parseSectionHeader(id)
-          break
-
-        case TOK_BLOCK_OPEN: // {
-          this.insideBlock = true
-          break
-        case TOK_BLOCK_CLOSE: // }
-          this.insideBlock = false
-          break
-        default:
-          if (id <= 9) break
-          switch (this.stage) {
-            case TOK_PLAYER_SETUP: this.parsePlayerSetup(token, args); break
-            case TOK_LAND_GENERATION: this.parseLandGeneration(token, args); break
-            case TOK_CLIFF_GENERATION: this.parseCliffGeneration(token, args); break
-            case TOK_TERRAIN_GENERATION: this.parseTerrainGeneration(token, args); break
-            case TOK_OBJECTS_GENERATION: this.parseObjectsGeneration(token, args); break
-            case TOK_CONNECTION_GENERATION: this.parseConnectionGeneration(token, args); break
-            case TOK_ELEVATION_GENERATION: this.parseElevationGeneration(token, args); break
-          }
-      }
+      this._parseCommand(token)
     }
   }
 

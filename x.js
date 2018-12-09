@@ -25,7 +25,7 @@ class StepsController extends Controller {
   }
 }
 
-async function main (file = './test/Arabia.rms') {
+async function main (file = './rms/Arabia.rms') {
   const content = await readFile(file)
 
   const controller = new StepsController(content)

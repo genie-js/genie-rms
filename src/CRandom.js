@@ -1,14 +1,15 @@
+const make = require('msvcrt-rand/make')
+
 /**
  * Microsoft C Runtime rand() implementation
  */
 class CRandom {
   constructor (seed) {
-    this.seed = seed | 0 // make it an int32
+    this.msvcrtRand = make(seed)
   }
 
   next () {
-    this.seed = (((this.seed * 214013) | 0) + 2531011) | 0
-    return (this.seed >> 16) & 0x7fff
+    return this.msvcrtRand()
   }
 
   nextRange (max) {

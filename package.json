@@ -17,6 +17,7 @@
   "devDependencies": {
     "brfs": "^2.0.1",
     "buble": "^0.19.3",
+    "jest": "^23.6.0",
     "standard": "^11.0.1"
   },
   "keywords": [
@@ -34,6 +35,11 @@
     "build:json": "cp src/*.json lib/",
     "build:lres": "brfs src/landResources.js > lib/landResources.js",
     "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
-    "test": "standard src/**/*.js"
+    "test": "jest"
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ]
   }
 }

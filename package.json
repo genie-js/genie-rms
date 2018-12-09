@@ -1,13 +1,13 @@
 {
   "name": "genie-rms",
   "version": "0.0.0",
-  "author": "goto-bus-stop <rene@kooi.me>",
+  "author": "Renée Kooi <renee@kooi.me>",
   "browser": {
     "pngjs": false,
     "./lib/Logger.js": "./lib/BrowserLogger.js",
     "./src/Logger.js": "./src/BrowserLogger.js"
   },
-  "bugs": "https://github.com/goto-bus-stop/genie-rms/issues",
+  "bugs": "https://github.com/genie-js/genie-rms/issues",
   "dependencies": {
     "awestruct": "^1.0.0",
     "chalk": "^2.4.1",

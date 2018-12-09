@@ -30,9 +30,9 @@ The argument types list always contains 4 elements. Tokens taking fewer than 4 a
 4. Optional constant
 5. Filename (used in #include)
 
-The difference between Constants and Optional constants is subtle. It changes how the parser treats absence. Optional constants are used as `if` and `elseif` arguments: a constant referenced by that word existing means "true", and it not existing means "false". i.e., if the parser does not recognise the word, it keeps executing normally. However, when "normal" Constants do not exist, it results in a parse error. The RMS parser does not show parse errors to the user, but instead restarts-ish parsing at the next token.
-
 For example, the `#define` token has ID 0, and argument types [1, 0, 0, 0]. The `land_position` token has ID 71 and argument types [2, 2, 0, 0]. The number of non-0 argument types is important for parsing. The RMS parser assumes the next command begins when the argument type is 0. So, the single-line string `#define X land_position 2 2` will parse as two commands.
+
+The difference between Constants and Optional constants is subtle. It changes how the parser treats absence. Optional constants are used as `if` and `elseif` arguments: a constant referenced by that word existing means "true", and it not existing means "false". i.e., if the parser does not recognise the word, it keeps executing normally. However, when "normal" Constants do not exist, it results in a parse error. The RMS parser does not show parse errors to the user, but instead restarts-ish parsing at the next token.
 
 (...)
 

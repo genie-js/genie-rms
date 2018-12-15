@@ -1,6 +1,7 @@
 module.exports = class ZoneMap {
   constructor (map, terrainRules) {
     this.map = map
+    this.numZones = 0
     this.terrainRules = terrainRules
 
     this.zoneMap = new Int8Array(map.sizeX * map.sizeY)
@@ -11,8 +12,11 @@ module.exports = class ZoneMap {
 
     this.zoneInfo = new Int8Array(255).fill(-1)
     this._sizeCache = new Int32Array(255)
+    this._directZoneConnections = new Uint8Array()
+    this._indirectZoneConnections = new Int8Array()
 
     this.doZoneMap()
+    this._computeConnectivity()
   }
 
   /**
@@ -37,7 +41,7 @@ module.exports = class ZoneMap {
       }
     }
 
-    this.lastZone = zone
+    this.numZones = zone
   }
 
   _checkZoneXY (zoneQueue, x, y, group, zone) {
@@ -84,6 +88,47 @@ module.exports = class ZoneMap {
       Math.sign(passability) === Math.sign(terrainRules[i]))
   }
 
+  zonesConnect (a, b) {
+    return this._directZoneConnections[a * this.numZones + b] === 1
+  }
+
+  _computeConnectivity () {
+    this._directZoneConnections = new Uint8Array(this.numZones ** 2)
+    this._indirectZoneConnections = new Int8Array(this.numZones ** 2)
+    this._indirectZoneConnections.fill(-1)
+
+    for (let y = 0; y < this.map.sizeY; y++) {
+      for (let x = 0; x < this.map.sizeY; x++) {
+        // etc
+      }
+    }
+
+    for (let a = 0; a < this.numZones; a++) {
+      for (let b = 0; b < this.numZones; b++) {
+        if (!this.zonesConnect(a, b)) {
+          const connector = this._getIndirectConnection(a, b)
+          if (connector !== -1) {
+            this._indirectZoneConnections[a * this.numZones + b] = connector
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Find a zone that connects two unconnected zones.
+   *
+   * @return {number} Zone number if found, -1 otherwise.
+   */
+  _getIndirectConnection (a, b) {
+    for (let c = 0; c < this.numZones; c++) {
+      if (this.zonesConnect(a, c) && this.zonesConnect(b, c)) {
+        return c
+      }
+    }
+    return -1
+  }
+
   /**
    * @return {number}
    */
@@ -100,7 +145,11 @@ module.exports = class ZoneMap {
    */
   numberTilesInZone (zone) {
     if (this._sizeCache[zone] === -1) {
-      this._sizeCache[zone] = this.zoneMap.reduce((acc, value) => acc + (value === zone ? 1 : 0))
+      let acc = 0
+      for (let i = 0; i < this.zoneMap.length; i++) {
+        if (this.zoneMap[i] === zone) acc += 1
+      }
+      this._sizeCache[zone] = acc
     }
     return this._sizeCache[zone]
   }

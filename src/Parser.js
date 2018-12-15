@@ -49,6 +49,10 @@ const IF_STATE_FAIL = 1
 const IF_STATE_MATCH = 2
 const IF_STATE_DONE = 3
 
+const DIPLO_NEUTRAL = 0
+const DIPLO_ALLY = 1
+const DIPLO_ENEMY = 2
+
 const { floor, abs } = Math
 
 const hardcodedDrsIncludes = {
@@ -62,11 +66,28 @@ const hardcodedDrsIncludes = {
 class Parser {
   constructor (options = {}) {
     this.options = Object.assign({
-      numPlayers: 2,
+      numPlayers: null,
       size: 120,
       random: null,
       onWarn: (warning) => {}
     }, options)
+
+    this.players = this.options.players
+    if (!this.players) {
+      if (this.options.numPlayers == null) {
+        this.options.numPlayers = 2
+      }
+
+      this.players = []
+      while (this.players.length < this.options.numPlayers) {
+        this.players.push({
+          id: this.players.length,
+          x: null,
+          y: null,
+          diplomacy: Array(this.options.numPlayers).fill(DIPLO_ENEMY)
+        })
+      }
+    }
 
     this.logger = new Logger('parser')
 
@@ -162,7 +183,7 @@ class Parser {
    * Finish parsing, applying the final postprocessing steps.
    */
   end () {
-    const players = this._placePlayers()
+    this._placePlayers()
 
     for (const land of this.lands) {
       if (land.position.x > -1 && land.position.y > -1) {
@@ -227,7 +248,7 @@ class Parser {
     }
 
     if (this.lands.length <= 0) {
-      for (const player of players) {
+      for (const player of this.players) {
         this.objectHotspots.push({
           x: player.x,
           y: player.y,
@@ -316,15 +337,18 @@ class Parser {
     }
   }
 
+  _getStance (playerA, playerB) {
+    return playerA.diplomacy[playerB.id]
+  }
+
+  // 005386A0
   _placePlayers () {
-    const players = []
-    for (let i = 0; i < this.options.numPlayers; i += 1) {
-      players.push({
-        id: i,
-        x: this.random.nextRange(this.options.size),
-        y: this.random.nextRange(this.options.size)
-      })
+    for (const player of this.players) {
+      player.x = this.random.nextRange(this.options.size)
+      player.y = this.random.nextRange(this.options.size)
     }
+
+    // No Team Together support yet
 
     let numPlayerLands = 0 // Separate from number of players for multi TC starts
 
@@ -341,6 +365,10 @@ class Parser {
       maxY = Math.min(land.bottomBorder - land.topBorder - 2 * land.baseSize, maxY)
       minX = Math.max(land.leftBorder + land.baseSize, minX)
       minY = Math.max(land.topBorder + land.baseSize, minY)
+    }
+
+    if (numPlayerLands < 1) {
+      numPlayerLands = 1
     }
 
     const playerList = []
@@ -408,16 +436,19 @@ class Parser {
         }
       }
     })
-
-    return players
   }
 
   /**
    * Parse all available tokens.
    */
   _runParseLoop () {
-    while (this.readNextToken()) {
-      if (this.currentToken) this.parseToken()
+    try {
+      while (this.readNextToken()) {
+        if (this.currentToken) this.parseToken()
+      }
+    } catch (err) {
+      err.message = `(${this.line}:${this.column}) ${err.message}`
+      throw err
     }
   }
 

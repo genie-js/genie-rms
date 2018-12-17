@@ -798,7 +798,7 @@ class Parser {
           }
           break
         case 18: // land_percent
-          land.tiles = (args[0] / 100 * this.activeLands.length) * this.options.size * this.options.size
+          land.tiles = (args[0] / (100 * this.activeLands.length)) * this.options.size * this.options.size
           break
         case 74: // number_of_tiles
           land.tiles = args[0]

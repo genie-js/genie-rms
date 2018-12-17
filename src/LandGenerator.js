@@ -37,32 +37,38 @@ class LandGenerator extends Module {
 
   checkTerrainAndZone (land, x, y) {
     if (this.searchMapRows[y][x] !== -2) {
+      this.logger.log('skipping', land.zone, 'because of search map', x, y)
       return 0
     }
 
     let count = 0
+    let offset = Math.max(2, land.area * 2 / 3)
     let centerMinX = x - 2
     let centerMinY = y - 2
     let centerMaxX = x + 2
     let centerMaxY = y + 2
+    let landMinX = x - offset
+    let landMinY = y - offset
+    let landMaxX = x + offset
+    let landMaxY = y + offset
 
-    for (let curY = y - land.area; curY <= y + land.area; curY += 1) {
+    for (let curY = centerMinY; curY <= centerMaxY; curY += 1) {
       if (curY < 0) {
-        if (curY > centerMinY) count += 5
+        if (curY >= centerMinY) count += 3
         continue
       }
       if (curY >= this.map.sizeY) {
-        if (curY < centerMaxY) count += 5
+        if (curY <= centerMaxY) count += 3
         continue
       }
 
-      for (let curX = x - land.area; curX <= x + land.area; curX += 1) {
+      for (let curX = landMinX; curX <= landMaxX; curX += 1) {
         if (curX < 0) {
-          if (curX > centerMinX) count += 5
+          if (curX >= centerMinX) count += 1
           continue
         }
         if (curX >= this.map.sizeX) {
-          if (curX < centerMaxX) count += 5
+          if (curX <= centerMaxX) count += 1
           continue
         }
 
@@ -70,10 +76,18 @@ class LandGenerator extends Module {
           if (curY >= centerMinY && curY <= centerMaxY &&
               curX >= centerMinX && curX <= centerMaxX) {
             count += 1
-          } else if (this.searchMapRows[curY][curX] < -2) {
+          } else if (this.searchMapRows[curY][curX] < -2 &&
+            curX >= x - land.area && curX <= x + land.area &&
+            curY >= y - land.area && curY <= y + land.area) {
+            this.logger.log('skipping', land.zone, 'because of search map 2', curX, curY)
             return 0
           }
         }
+      }
+
+      if (curY < landMinY || curY > landMaxY) {
+        landMinX -= 1
+        landMaxX += 1
       }
     }
 
@@ -109,11 +123,12 @@ class LandGenerator extends Module {
     const stacks = []
     const landSizes = []
 
-    for (const [landId, land] of Object.entries(this.lands)) {
-      stacks.push(new StackNode())
-      landSizes.push(0)
+    for (let i = 0; i < this.lands.length; i++) {
+      const land = this.lands[i]
+      stacks[i] = new StackNode()
+      landSizes[i] = 0
 
-      this.logger.log('place base land', landId, land.zone, land.terrain, 'at', land.position)
+      this.logger.log('place base land', i, 'of size', land.tiles, 'and type', land.zone, land.terrain, 'at', land.position)
       const minX = Math.max(0, land.position.x - land.baseSize)
       const minY = Math.max(0, land.position.y - land.baseSize)
       const maxX = Math.min(sizeX, land.position.x + land.baseSize)
@@ -137,86 +152,81 @@ class LandGenerator extends Module {
 
       if (minX > 0) {
         for (let y = minY; y <= maxY; y++) {
-          this.pushStack(stacks[landId], minX - 1, y, landId, 0)
+          this.pushStack(stacks[i], minX - 1, y, i, 0)
         }
       }
       if (minY > 0) {
         for (let x = minX; x <= maxX; x++) {
-          this.pushStack(stacks[landId], x, minY - 1, landId, 0)
+          this.pushStack(stacks[i], x, minY - 1, i, 0)
         }
       }
       if (maxX < sizeX) {
         for (let y = minY; y <= maxY; y++) {
-          this.pushStack(stacks[landId], maxX + 1, y, landId, 0)
+          this.pushStack(stacks[i], maxX + 1, y, i, 0)
         }
       }
       if (maxY < sizeY) {
         for (let x = minX; x <= maxX; x++) {
-          this.pushStack(stacks[landId], x, maxY + 1, landId, 0)
+          this.pushStack(stacks[i], x, maxY + 1, i, 0)
         }
       }
     }
-
-    this.searchMapRows.forEach((row) => {
-      console.error(Array.from(row)
-        .map(t => t === -2 ? '-' : t)
-        .join(''))
-    })
 
     this.logger.log('distributing clumps', this.lands.map(l => l.tiles))
     this.logger.log('available tiles', stacks.map(s => s.size()))
     let done = false
     while (!done) {
       done = true
-      for (const [landId, land] of Object.entries(this.lands)) {
-        this.logger.log('trying', landId)
-        if (landSizes[landId] >= land.tiles) {
-          this.logger.log('skipping', landId, 'because of size')
+      for (let i = 0; i < this.lands.length; i++) {
+        const land = this.lands[i]
+        this.logger.log('trying', i)
+        if (landSizes[i] >= land.tiles) {
+          this.logger.log('skipping', i, 'because of size')
           continue
         }
-        const tile = this.popStack(stacks[landId])
+        const tile = this.popStack(stacks[i])
         if (!tile) {
-          this.logger.log('skipping', landId, 'because stack is empty')
+          this.logger.log('skipping', i, 'because stack is empty')
           continue
         }
         const { x, y } = tile
         done = false
 
-        if (this.chance(x, y, landId) > this.random.nextRange(100)) {
-          this.logger.log('skipping', landId, 'because of random')
+        if (this.chance(x, y, i) > this.random.nextRange(100)) {
+          this.logger.log('skipping', i, 'because of random')
           this.searchMapRows[y][x] = -1
           continue
         }
 
         const cost = this.checkTerrainAndZone(land, x, y)
         if (cost === 0) {
-          this.logger.log('skipping', landId, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
+          this.logger.log('skipping', i, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
           continue
         }
         if (this.searchMapRows[y][x] === -2 && cost > 0) {
-          this.logger.log('placing', landId)
+          this.logger.log('placing', i)
 
           this.map.get(x, y).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
 
           if (x > 0 && this.searchMapRows[y][x - 1] === -2) {
-            this.pushStack(stacks[landId], x - 1, y,
+            this.pushStack(stacks[i], x - 1, y,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
           if (x < sizeX && this.searchMapRows[y][x + 1] === -2) {
-            this.pushStack(stacks[landId], x + 1, y,
+            this.pushStack(stacks[i], x + 1, y,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
           if (y > 0 && this.searchMapRows[y - 1][x] === -2) {
-            this.pushStack(stacks[landId], x, y - 1,
+            this.pushStack(stacks[i], x, y - 1,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
           if (y < sizeY && this.searchMapRows[y + 1][x] === -2) {
-            this.pushStack(stacks[landId], x, y + 1,
+            this.pushStack(stacks[i], x, y + 1,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
 
-          landSizes[landId] += 1
+          landSizes[i] += 1
         }
       }
       this.logger.log('land sizes:', landSizes)

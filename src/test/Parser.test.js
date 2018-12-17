@@ -6,7 +6,10 @@ const randomMapDef = require('../randomMapDef.js')
 
 function parseMap (filename, seed = 0) {
   const content = fs.readFileSync(require.resolve('../../rms/' + filename), 'utf8')
-  const parser = new Parser({ random: new CRandom(seed) })
+  const parser = new Parser({
+    random: new CRandom(seed),
+    numPlayers: 2
+  })
   parser.write(randomMapDef)
   parser.write(content)
   return parser.end()

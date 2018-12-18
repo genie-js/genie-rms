@@ -183,7 +183,7 @@ class Parser {
    * Finish parsing, applying the final postprocessing steps.
    */
   end () {
-    this._placePlayers()
+    this._placePlayersRandomly()
 
     for (const land of this.lands) {
       if (land.position.x > -1 && land.position.y > -1) {
@@ -342,7 +342,7 @@ class Parser {
   }
 
   // 005386A0
-  _placePlayers () {
+  _placePlayersRandomly () {
     for (const player of this.players) {
       player.x = this.random.nextRange(this.options.size)
       player.y = this.random.nextRange(this.options.size)
@@ -371,21 +371,6 @@ class Parser {
       numPlayerLands = 1
     }
 
-    const playerList = []
-    while (playerList.length < 8) {
-      const playerId = Math.min(8, this.random.nextRange(8) + 1)
-      if (playerList.includes(playerId)) continue
-
-      playerList.push(playerId)
-    }
-
-    const visitedLandsList = this.lands.map(() => false)
-    // Player lands are laid out on a squarish circlish
-    // shape on the map. This array contains a single
-    // number for each land determining where on the
-    // shape it is placed.
-    const landPlacement = this.lands.map(() => 0)
-
     const v10 = 6 * maxX / 10
     const v11 = 6 * maxY / 10
     const v12 = 2 * maxX / 10
@@ -394,6 +379,21 @@ class Parser {
     const landSizeNumber = 2 * (v11 + v10) / numPlayerLands
     const v54 = 6 * maxX / 10
     const v53 = v10 + v11 + v10
+
+    const playerList = []
+    while (playerList.length < 8) {
+      const playerId = Math.min(8, this.random.nextRange(8) + 1)
+      if (playerList.includes(playerId)) continue
+
+      playerList.push(playerId)
+    }
+
+    const visitedLandsList = Array(this.lands.length).fill(false)
+    // Player lands are laid out on a squarish circlish
+    // shape on the map. This array contains a single
+    // number for each land determining where on the
+    // shape it is placed.
+    const landPlacement = Array(this.lands.length).fill(0)
 
     let placeNumber = this.random.nextRange(2 * v47)
     for (let i = 0; i < 8; i++) {

@@ -793,12 +793,12 @@ class Parser {
         case 71: // land_position
           if (this.isPlayerLand) break
           land.position = {
-            x: args[0] / 100 * this.options.size,
-            y: args[1] / 100 * this.options.size
+            x: floor(args[0] / 100 * this.options.size),
+            y: floor(args[1] / 100 * this.options.size)
           }
           break
         case 18: // land_percent
-          land.tiles = (args[0] / (100 * this.activeLands.length)) * this.options.size * this.options.size
+          land.tiles = floor((args[0] / (100 * this.activeLands.length)) * this.options.size ** 2)
           break
         case 74: // number_of_tiles
           land.tiles = args[0]
@@ -807,16 +807,16 @@ class Parser {
           land.terrain = args[0].value
           break
         case 23: // left_border
-          land.leftBorder = args[0] * this.options.size / 100
+          land.leftBorder = floor(args[0] * this.options.size / 100)
           break
         case 24: // right_border
-          land.rightBorder = this.options.size - args[0] * this.options.size / 100
+          land.rightBorder = floor(this.options.size - args[0] * this.options.size / 100)
           break
         case 25: // top_border
-          land.topBorder = args[0] * this.options.size / 100
+          land.topBorder = floor(args[0] * this.options.size / 100)
           break
         case 26: // bottom_border
-          land.bottomBorder = this.options.size - args[0] * this.options.size / 100
+          land.bottomBorder = floor(this.options.size - args[0] * this.options.size / 100)
           break
         case 27: // border_fuzziness
           land.borderFuzziness = args[0]

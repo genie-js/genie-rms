@@ -8,7 +8,7 @@
           @ready="onEditorReady"
         ></code-mirror>
       </div>
-      <div class="bg-dark-gray white pa2">
+      <div class="bg-dark-gray white pa2 overflow-y-auto">
         <h2 class="pa0 ma0 mt2">Preset</h2>
         <p>
           Select builtin map:

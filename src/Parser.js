@@ -1157,7 +1157,8 @@ class Parser {
             // Base level has spacing:2 by default.
             spacing: h === 0 ? 2 : 1,
             baseTerrain: 0,
-            baseElevation: h
+            baseElevation: h,
+            scalingType: 0
           })
           this.elevations.push(elevation)
           this.activeElevations.push(elevation)

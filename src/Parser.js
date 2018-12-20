@@ -3,6 +3,7 @@ const Logger = require('./Logger.js')
 const Token = require('./Token.js')
 const CRandom = require('./CRandom.js')
 const defaultTokens = require('./defaultTokens.js')
+const hardcodedDrsIncludes = require('./hardcodedDrsIncludes.js')
 
 const TOKEN_TYPE_SYNTAX = 0
 const TOKEN_TYPE_DEFINE = 1
@@ -54,10 +55,6 @@ const DIPLO_ALLY = 1
 const DIPLO_ENEMY = 2
 
 const { floor, abs } = Math
-
-const hardcodedDrsIncludes = {
-  54103: require('./landResources')
-}
 
 /**
  * An implementation of the Age of Empires 2 Random Map Script parser,

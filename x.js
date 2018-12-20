@@ -14,15 +14,21 @@ async function main (
   const controller = new DebugController(content, { randomSeed })
   controller.generate()
 
-  for (const [name, imageData] of controller.minimaps) {
+  function writePng (imageData, name) {
     const png = new PNG({
       width: controller.map.sizeX,
       height: controller.map.sizeY
     })
     png.data = Buffer.from(imageData)
 
-    await finished(png.pack().pipe(fs.createWriteStream(`./map-${name}.png`)))
+    return finished(png.pack().pipe(fs.createWriteStream(name)))
   }
+
+  for (const [name, imageData] of controller.minimaps) {
+    await writePng(imageData, `./map-${name}.png`)
+  }
+
+  await writePng(controller.map.render(), './map.png')
 }
 
 main(...process.argv.slice(2)).catch((err) => {

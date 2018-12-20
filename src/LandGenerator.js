@@ -2,6 +2,9 @@ const Logger = require('./Logger.js')
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
 
+const SM_UNOCCUPIED = -2
+const SM_EMPTY = -1
+
 class LandGenerator extends Module {
   constructor (map, parent, lands, meta) {
     super(map, parent, true)
@@ -27,22 +30,21 @@ class LandGenerator extends Module {
   generate () {
     this.clearStack()
 
-    this.searchMap.fill(-2)
+    this.searchMap.fill(SM_UNOCCUPIED)
 
     this._applyBaseTerrain()
     this.baseLandGenerate()
 
-    // this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.meta.baseTerrain)
+    this.map.cleanTerrain(0, 0, this.map.sizeX, this.map.sizeY, this.meta.baseTerrain)
   }
 
   checkTerrainAndZone (land, x, y) {
-    if (this.searchMapRows[y][x] !== -2) {
-      this.logger.log('skipping', land.zone, 'because of search map', x, y)
+    if (this.searchMapRows[y][x] !== SM_UNOCCUPIED) {
       return 0
     }
 
     let count = 0
-    let offset = Math.max(2, land.area * 2 / 3)
+    let offset = Math.max(2, Math.floor(land.area * 2 / 3))
     let centerMinX = x - 2
     let centerMinY = y - 2
     let centerMaxX = x + 2
@@ -76,7 +78,7 @@ class LandGenerator extends Module {
           if (curY >= centerMinY && curY <= centerMaxY &&
               curX >= centerMinX && curX <= centerMaxX) {
             count += 1
-          } else if (this.searchMapRows[curY][curX] < -2 &&
+          } else if (this.searchMapRows[curY][curX] > 0 &&
             curX >= x - land.area && curX <= x + land.area &&
             curY >= y - land.area && curY <= y + land.area) {
             this.logger.log('skipping', land.zone, 'because of search map 2', curX, curY)
@@ -194,7 +196,7 @@ class LandGenerator extends Module {
 
         if (this.chance(x, y, i) > this.random.nextRange(100)) {
           this.logger.log('skipping', i, 'because of random')
-          this.searchMapRows[y][x] = -1
+          this.searchMapRows[y][x] = SM_EMPTY
           continue
         }
 
@@ -203,25 +205,25 @@ class LandGenerator extends Module {
           this.logger.log('skipping', i, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
           continue
         }
-        if (this.searchMapRows[y][x] === -2 && cost > 0) {
+        if (this.searchMapRows[y][x] === SM_UNOCCUPIED && cost > 0) {
           this.logger.log('placing', i)
 
           this.map.get(x, y).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
 
-          if (x > 0 && this.searchMapRows[y][x - 1] === -2) {
+          if (x > 0 && this.searchMapRows[y][x - 1] === SM_UNOCCUPIED) {
             this.pushStack(stacks[i], x - 1, y,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
-          if (x < sizeX && this.searchMapRows[y][x + 1] === -2) {
+          if (x < sizeX && this.searchMapRows[y][x + 1] === SM_UNOCCUPIED) {
             this.pushStack(stacks[i], x + 1, y,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
-          if (y > 0 && this.searchMapRows[y - 1][x] === -2) {
+          if (y > 0 && this.searchMapRows[y - 1][x] === SM_UNOCCUPIED) {
             this.pushStack(stacks[i], x, y - 1,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }
-          if (y < sizeY && this.searchMapRows[y + 1][x] === -2) {
+          if (y < sizeY && this.searchMapRows[y + 1][x] === SM_UNOCCUPIED) {
             this.pushStack(stacks[i], x, y + 1,
               0, this.random.nextRange(100) - land.clumpiness * cost + 250)
           }

@@ -234,7 +234,8 @@ class Parser {
       }
     }
 
-    for (const [i, land] of Object.entries(this.lands)) {
+    for (let i = 0; i < this.lands.length; i += 1) {
+      const land = this.lands[i]
       this.objectHotspots[i].x = land.position.x
       this.objectHotspots[i].y = land.position.y
       this.cliffHotspots.push({
@@ -777,12 +778,14 @@ class Parser {
           const landId = this.createLand(i)
           this.activeLands.push(landId)
         }
+        this.log('create_player_lands', this.activeLands)
         this.isPlayerLand = true
         return
       }
       if (id === 32) { // create_land
         const landId = this.createLand(0)
-        this.activeLands.push(landId)
+        this.activeLands = [landId]
+        this.log('create_land', landId)
         this.isPlayerLand = false
         return
       }
@@ -799,7 +802,8 @@ class Parser {
           }
           break
         case 18: // land_percent
-          land.tiles = floor((args[0] / (100 * this.activeLands.length)) * this.options.size ** 2)
+          land.tiles = floor((args[0] / (100 * this.activeLands.length)) * (this.options.size ** 2))
+          this.log('land.tiles =', args[0], '→', land.tiles)
           break
         case 74: // number_of_tiles
           land.tiles = args[0]

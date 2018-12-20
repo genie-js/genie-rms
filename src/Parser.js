@@ -494,7 +494,7 @@ class Parser {
     this.currentToken = null
     if (token) {
       this.currentToken = token
-      return this.currentToken
+      return token
     } else if (this.commentDepth === 0) {
       this.warn(`${word}, unrecognized command ignored.`)
     }
@@ -560,16 +560,15 @@ class Parser {
 
   _parseComment (token) {
     if (token.id === TOK_COMMENT_OPEN) { // /*
+      console.log('  '.repeat(this.commentDepth) + 'open', `${this.line}:${this.column}`)
       this.commentDepth += 1
-      return true
     }
     if (token.id === TOK_COMMENT_CLOSE) { // */
+      if (this.commentDepth <= 0) {
+        throw this.error('End remark without beginning remark.')
+      }
       this.commentDepth -= 1
-      return true
-    }
-
-    if (this.commentDepth > 0) {
-      return true
+      console.log('  '.repeat(this.commentDepth) + 'close', `${this.line}:${this.column}`)
     }
   }
 
@@ -678,83 +677,87 @@ class Parser {
     }
   }
 
-  _parseCommand (token) {
-    switch (token.id) {
-      case TOK_DEFINE: { // #define
-        const [ name ] = this.currentArgs
-        this.log('Defining constant', this.logger.cyan(name))
-        this.defineUserToken(name, TOKEN_TYPE_DEFINE, 0,
-          [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
-        break
-      }
-      case TOK_CONST: { // #const
-        const [ name, value ] = this.currentArgs
-        this.log('Defining constant', this.logger.cyan(name), value)
-        this.defineUserToken(name, TOKEN_TYPE_CONST, value,
-          [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
-        break
-      }
-      case TOK_INCLUDE: // #include
-        throw this.error('#include is not supported')
-      case TOK_INCLUDE_DRS: { // #include_drs
-        const [ , id ] = this.currentArgs
-        if (id in hardcodedDrsIncludes) {
-          this.includeCode(hardcodedDrsIncludes[id])
-        } else {
-          throw this.error('#include_drs is not supported')
-        }
-        break
-      }
-      case TOK_PLAYER_SETUP: // <PLAYER_SETUP>
-      case TOK_LAND_GENERATION: // <LAND_GENERATION>
-      case TOK_CLIFF_GENERATION: // <CLIFF_GENERATION>
-      case TOK_TERRAIN_GENERATION: // <TERRAIN_GENERATION>
-      case TOK_OBJECTS_GENERATION: // <OBJECTS_GENERATION>
-      case TOK_CONNECTION_GENERATION: // <CONNECTION_GENERATION>
-      case TOK_ELEVATION_GENERATION: // <ELEVATION_GENERATION>
-        this.parseSectionHeader(token.id)
-        break
-
-      case TOK_BLOCK_OPEN: // {
-        this.insideBlock = true
-        break
-      case TOK_BLOCK_CLOSE: // }
-        this.insideBlock = false
-        break
-      default:
-        if (token.id <= 9) break
-        switch (this.stage) {
-          case TOK_PLAYER_SETUP: this.parsePlayerSetup(token, this.currentArgs); break
-          case TOK_LAND_GENERATION: this.parseLandGeneration(token, this.currentArgs); break
-          case TOK_CLIFF_GENERATION: this.parseCliffGeneration(token, this.currentArgs); break
-          case TOK_TERRAIN_GENERATION: this.parseTerrainGeneration(token, this.currentArgs); break
-          case TOK_OBJECTS_GENERATION: this.parseObjectsGeneration(token, this.currentArgs); break
-          case TOK_CONNECTION_GENERATION: this.parseConnectionGeneration(token, this.currentArgs); break
-          case TOK_ELEVATION_GENERATION: this.parseElevationGeneration(token, this.currentArgs); break
-        }
-    }
-  }
-
   parseToken () {
     const token = this.currentToken
 
-    if (this._parseComment(token)) {
-      return
-    }
-
     this.currentArgs = this._parseArgs(token.argTypes)
 
-    if (this.ifState === IF_STATE_MATCH) {
-      this._parseRandom(token)
+    if (this.commentDepth === 0) {
+      if (this.ifState === IF_STATE_MATCH) {
+        this._parseRandom(token)
+      }
+
+      if (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH) {
+        this._parseIf(token)
+      }
+
+      if (this.ifState === IF_STATE_MATCH && (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH)) {
+        switch (token.id) {
+          case TOK_DEFINE: { // #define
+            const [ name ] = this.currentArgs
+            this.log('Defining constant', this.logger.cyan(name))
+            this.defineUserToken(name, TOKEN_TYPE_DEFINE, 0,
+              [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
+            break
+          }
+          case TOK_CONST: { // #const
+            const [ name, value ] = this.currentArgs
+            this.log('Defining constant', this.logger.cyan(name), value)
+            this.defineUserToken(name, TOKEN_TYPE_CONST, value,
+              [ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE, ARGTYPE_NONE])
+            break
+          }
+          case TOK_INCLUDE: // #include
+            throw this.error('#include is not supported')
+          case TOK_INCLUDE_DRS: { // #include_drs
+            const [ , id ] = this.currentArgs
+            if (id in hardcodedDrsIncludes) {
+              this.includeCode(hardcodedDrsIncludes[id])
+            } else {
+              throw this.error('#include_drs is not supported')
+            }
+            break
+          }
+          case TOK_PLAYER_SETUP: // <PLAYER_SETUP>
+          case TOK_LAND_GENERATION: // <LAND_GENERATION>
+          case TOK_CLIFF_GENERATION: // <CLIFF_GENERATION>
+          case TOK_TERRAIN_GENERATION: // <TERRAIN_GENERATION>
+          case TOK_OBJECTS_GENERATION: // <OBJECTS_GENERATION>
+          case TOK_CONNECTION_GENERATION: // <CONNECTION_GENERATION>
+          case TOK_ELEVATION_GENERATION: // <ELEVATION_GENERATION>
+            this.parseSectionHeader(token.id)
+            break
+
+          case TOK_COMMENT_OPEN:
+            console.log('  '.repeat(this.commentDepth) + 'open (command)', `${this.line}:${this.column}`)
+            this.commentDepth += 1
+            return
+          case TOK_COMMENT_CLOSE:
+            throw this.error('End remark without beginning remark.')
+
+          case TOK_BLOCK_OPEN: // {
+            this.insideBlock = true
+            break
+          case TOK_BLOCK_CLOSE: // }
+            this.insideBlock = false
+            break
+          default:
+            if (token.id <= 9) break
+            switch (this.stage) {
+              case TOK_PLAYER_SETUP: this.parsePlayerSetup(token, this.currentArgs); break
+              case TOK_LAND_GENERATION: this.parseLandGeneration(token, this.currentArgs); break
+              case TOK_CLIFF_GENERATION: this.parseCliffGeneration(token, this.currentArgs); break
+              case TOK_TERRAIN_GENERATION: this.parseTerrainGeneration(token, this.currentArgs); break
+              case TOK_OBJECTS_GENERATION: this.parseObjectsGeneration(token, this.currentArgs); break
+              case TOK_CONNECTION_GENERATION: this.parseConnectionGeneration(token, this.currentArgs); break
+              case TOK_ELEVATION_GENERATION: this.parseElevationGeneration(token, this.currentArgs); break
+            }
+            return
+        }
+      }
     }
 
-    if (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH) {
-      this._parseIf(token)
-    }
-
-    if (this.ifState === IF_STATE_MATCH && (this.randomStack.length === 0 || this.randomState === RANDOM_STATE_MATCH)) {
-      this._parseCommand(token)
-    }
+    this._parseComment(token)
   }
 
   parsePlayerSetup (token) {

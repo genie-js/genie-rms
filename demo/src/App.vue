@@ -4,11 +4,18 @@
       <div style="flex-grow: 2">
         <code-mirror
           v-model="code"
-          :options="options"
-          @ready="cmReady"
+          :options="editorOptions"
+          @ready="onEditorReady"
         ></code-mirror>
       </div>
       <div class="bg-dark-gray white pa2">
+        <h2 class="pa0 ma0 mt2">Preset</h2>
+        <p>
+          Select builtin map:
+          <select @change="onSelectPreset">
+            <option v-for="map of Object.keys(maps)" :value="map">{{map}}</option>
+          </select>
+        </p>
         <h2 class="pa0 ma0">Preview</h2>
         <minimap :data="imageData" size="120"></minimap>
         <p class="flex items-center w-100">
@@ -21,8 +28,9 @@
           <li v-for="warning of warnings">{{warning.message}}</li>
         </ul>
         <p class="bg-dark-red pa3" style="width: 400px">
-          This is still a work in progress! Player lands, elevation, and cliffs are not yet implemented.
-          Maps with islands or lots of forest will not work correctly.
+          This is still a work in progress!
+          Elevation, cliffs, player connections, and walls are not yet implemented.
+          Maps with water or forest base terrains will also not work correctly.
         </p>
       </div>
     </div>
@@ -39,24 +47,23 @@ const { Pos } = require('codemirror')
 const { codemirror: CodeMirrorComponent } = require('vue-codemirror')
 const Minimap = require('./components/Minimap.vue')
 const generate = require('./generate.js')
-const fs = require('fs')
+const maps = require('./maps.js')
 
 require('codemirror/addon/lint/lint')
 // Add codemirror language.
-require('./aoe2-rms.js')
-
-const arabiaRms = fs.readFileSync(require.resolve('./Arabia.rms'), 'utf8')
+require('codemirror-genie').install()
 
 module.exports = {
   name: 'app',
   data () {
     return {
-      code: arabiaRms,
+      maps,
+      code: maps.Arabia,
       seed: 32767,
       warnings: [],
       imageData: null,
       cm: null,
-      options: {
+      editorOptions: {
         mode: 'aoe2-rms',
         theme: 'monokai',
         styleActiveLine: true,
@@ -78,8 +85,11 @@ module.exports = {
   },
 
   methods: {
-    cmReady (cm) {
+    onEditorReady (cm) {
       this.cm = cm
+    },
+    onSelectPreset (event) {
+      this.code = maps[event.target.value]
     },
     randomSeed () {
       this.seed = Math.floor(Math.random() * 32767)

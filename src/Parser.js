@@ -289,6 +289,8 @@ class Parser {
       if (terrain.tiles < 0) {
         terrain.tiles = -(terrain.tiles / 100) * (this.options.size ** 2)
       }
+      terrain.tiles = floor(terrain.tiles)
+      terrain.numberOfClumps = floor(terrain.numberOfClumps)
     }
 
     for (const elev of this.elevations) {
@@ -297,6 +299,7 @@ class Parser {
       } else if (elev.scalingType === 2) {
         elev.numberOfTiles *= this.options.size ** 2 / 10000
       }
+      elev.numberOfTiles = floor(elev.numberOfTiles)
     }
 
     for (const objectHs of this.objectHotspots) {

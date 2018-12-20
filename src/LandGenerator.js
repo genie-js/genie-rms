@@ -78,12 +78,12 @@ class LandGenerator extends Module {
           if (curY >= centerMinY && curY <= centerMaxY &&
               curX >= centerMinX && curX <= centerMaxX) {
             count += 1
-          } else if (this.searchMapRows[curY][curX] > 0 &&
-            curX >= x - land.area && curX <= x + land.area &&
-            curY >= y - land.area && curY <= y + land.area) {
-            this.logger.log('skipping', land.zone, 'because of search map 2', curX, curY)
-            return 0
           }
+        } else if (this.searchMapRows[curY][curX] > 0 &&
+                   curX >= x - land.area && curX <= x + land.area &&
+                   curY >= y - land.area && curY <= y + land.area) {
+          this.logger.log('skipping', land.zone, 'because contains other zone', this.searchMapRows[curY][curX], curX, curY)
+          return 0
         }
       }
 

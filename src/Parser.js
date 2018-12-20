@@ -443,6 +443,7 @@ class Parser {
    */
   _runParseLoop () {
     try {
+      this._skipWhitespace()
       while (this.readNextToken()) {
         if (this.currentToken) this.parseToken()
       }
@@ -1196,6 +1197,19 @@ class Parser {
           // This is the default behaviour.
           break
       }
+    }
+  }
+
+  _skipWhitespace () {
+    const match = this.code.slice(this.index).match(/^\s+/)
+    if (!match) return null
+    this.index += match[0].length
+    const lines = countLines(match[0])
+    if (lines > 0) {
+      this.line += lines
+      this.column = match[0].split(/\n/g)[lines].length
+    } else {
+      this.column += match[0].length
     }
   }
 

@@ -4,7 +4,11 @@ const Parser = require('../Parser')
 const CRandom = require('../CRandom')
 const randomMapDef = require('../randomMapDef.js')
 
-function parseMap (filename, seed = 0) {
+function parseMap (filename, opts = {}) {
+  const {
+    seed = 0
+  } = opts
+
   const content = fs.readFileSync(require.resolve('../../rms/' + filename), 'utf8')
   const parser = new Parser({
     random: new CRandom(seed),
@@ -25,7 +29,11 @@ test('parse Relic Nothing', () => {
   expect(parseResult).toMatchSnapshot()
 })
 
-test('parse FenCrazyV6n1', () => {
+test('parse FenCrazyV6n1 in 1.0c mode (bugged)', () => {
+  // This map contains a command that expects an argument before a close comment:
+  // "max_length_of_cliffs */"
+  // This causes the close comment to be skipped, so the entire map is effectively
+  // commented out. In UP1.4, this is fixed.
   const parseResult = parseMap('FenCrazyV6n1.rms')
   expect(parseResult).toMatchSnapshot()
 })

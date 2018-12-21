@@ -4,6 +4,12 @@ const StackNode = require('./StackNode.js')
 
 const { floor } = Math
 
+function isWall (id) {
+  return id === 117 || // stone
+    id === 155 || // fortified
+    id === 72 // palisade
+}
+
 class ObjectsGenerator extends Module {
   constructor (map, parent, world, objects, hotspots) {
     super(map, parent, true)
@@ -114,6 +120,45 @@ class ObjectsGenerator extends Module {
     this.logger.log('placeAvoidObjects', desc.type)
   }
 
+  placeWalls (desc, minDistanceToPlayers, maxDistanceToPlayers, ownerId) {
+    // TODO implement the more complex MapAnalysis based version
+    const distance = minDistanceToPlayers + this.random.nextRange(maxDistanceToPlayers - minDistanceToPlayers)
+
+    const place = (x, y) => {
+      this.map.place({ x, y }, {
+        type: desc.type,
+        player: ownerId
+      })
+    }
+
+    const findTc = () => {
+      for (let x = 0; x < this.map.sizeX; x++) {
+        for (let y = 0; y < this.map.sizeY; y++) {
+          const tile = this.map.get(x, y)
+          if (tile.object && tile.object.type === 109 && tile.object.player === ownerId) {
+            return { x, y }
+          }
+        }
+      }
+    }
+
+    // oof
+    const tc = findTc()
+    this.logger.log('place walls for', ownerId, 'at', tc)
+    const x0 = Math.max(0, tc.x - distance)
+    const y0 = Math.max(0, tc.y - distance)
+    const x1 = Math.min(this.map.sizeX - 1, tc.x + distance)
+    const y1 = Math.min(this.map.sizeY - 1, tc.y + distance)
+    for (let x = x0; x < x1; x++) {
+      place(x, y0)
+      place(x, y1)
+    }
+    for (let y = y0 + 1; y < y1 - 1; y++) {
+      place(x0, y)
+      place(x1, y)
+    }
+  }
+
   placeLandObjects (desc, x, y, minDistanceToPlayers, maxDistanceToPlayers, i) {
     const { maxDistanceToOtherZones } = desc
     const playerId = desc.playerId !== -1
@@ -125,6 +170,10 @@ class ObjectsGenerator extends Module {
     this.logger.log('placeLandObjects', desc.type, playerId)
 
     // TODO Change to scout if necessary
+    if (isWall(desc.type)) {
+      this.placeWalls(desc, minDistanceToPlayers, maxDistanceToPlayers, playerId)
+      return
+    }
 
     const terrainRules = Array(42).fill(1)
     this.zoneMap = this.map.mapZones.getZoneMap(terrainRules)
@@ -237,7 +286,7 @@ class ObjectsGenerator extends Module {
         type: desc.type,
         player: playerId
       })
-      toPlace--
+      toPlace -= 1
     }
   }
 

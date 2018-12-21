@@ -771,7 +771,7 @@ class Parser {
     const { id } = token
     if (!this.insideBlock) {
       if (id === 19) { // base_terrain
-        this.landMeta.baseTerrain = args[0].value
+        this.landMeta.baseTerrain = args[0].id
         return
       }
 
@@ -812,7 +812,7 @@ class Parser {
           land.tiles = args[0]
           break
         case 21: // terrain_type
-          land.terrain = args[0].value
+          land.terrain = args[0].id
           break
         case 23: // left_border
           land.leftBorder = floor(args[0] * this.options.size / 100)
@@ -935,7 +935,7 @@ class Parser {
       if (id === 43) { // create_terrain
         this.terrains.push(s({
           tiles: this.options.size, // NOT squared, just the horizontal amount of tiles
-          type: args[0].value,
+          type: args[0].id,
           numberOfClumps: 1,
           spacingToOtherTerrainTypes: 0,
           baseTerrain: 0,
@@ -958,7 +958,7 @@ class Parser {
     const terrain = this.terrains[this.terrains.length - 1]
     switch (id) {
       case 19: // base_terrain
-        terrain.baseTerrain = args[0].value
+        terrain.baseTerrain = args[0].id
         break
       case 18: // land_percent
         terrain.tiles = -args[0]
@@ -1002,7 +1002,7 @@ class Parser {
     if (!this.insideBlock) {
       if (id === 48 /* create_object */) {
         this.objects.push(s({
-          type: args[0] ? args[0].value : 0,
+          type: args[0] ? args[0].id : 0,
           baseTerrain: -1,
           groupingType: 0,
           scalingType: 0,
@@ -1069,7 +1069,7 @@ class Parser {
         object.groupingType = 2
         break
       case 0x38: // terrain_to_place_on
-        object.baseTerrain = args[0].value
+        object.baseTerrain = args[0].id
         break
       case 0x39: // set_gaia_object_only
         object.playerId = 0
@@ -1135,18 +1135,18 @@ class Parser {
     switch (id) {
       case 0x52: // default_terrain_placement
         for (const terrain of connection.terrains) {
-          terrain.replaceTerrain = args[0].value
+          terrain.replaceTerrain = args[0].id
         }
         break
       case 0x53: // replace_terrain
-        connection.terrains[args[0].value].replaceTerrain = args[1]
+        connection.terrains[args[0].id].replaceTerrain = args[1]
         break
       case 0x54: // terrain_cost
-        connection.terrains[args[0].value].terrainCost = args[1]
+        connection.terrains[args[0].id].terrainCost = args[1]
         break
       case 0x55: // terrain_size
-        connection.terrains[args[0].value].terrainSize = args[1]
-        connection.terrains[args[0].value].terrainVariation = args[2]
+        connection.terrains[args[0].id].terrainSize = args[1]
+        connection.terrains[args[0].id].terrainVariation = args[2]
         break
     }
   }
@@ -1186,7 +1186,7 @@ class Parser {
           elevation.spacing = args[0]
           break
         case 0x13: // base_terrain
-          elevation.baseTerrain = args[0].value
+          elevation.baseTerrain = args[0].id
           break
         case 0x2D: // number_of_clumps
           elevation.numberOfClumps = args[0]
@@ -1254,7 +1254,7 @@ class Parser {
     const word = this.readNextWord()
     if (word) {
       const token = this.getTokenType(word)
-      if (!token || token.value) {
+      if (!token || token.id) {
         return word
       }
     }

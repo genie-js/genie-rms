@@ -34,7 +34,7 @@
   "scripts": {
     "build": "buble src --output lib -y dangerousForOf -m && npm run build:json && npm run build:lres && npm run build:rmdef",
     "build:json": "cp src/*.json lib/",
-    "build:lres": "brfs src/landResources.js > lib/landResources.js",
+    "build:lres": "brfs src/hardcodedDrsIncludes.js > lib/hardcodedDrsIncludes.js",
     "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
     "test": "jest"
   },

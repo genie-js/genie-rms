@@ -1,0 +1,49 @@
+/* Tests that comments are "correctly" bugged in AoC1.0c and UP<=1.4 compatibility
+ * mode.
+ *
+ * In AoC before UP1.5, comments in dead `if` branches were not skipped correctly.
+ * `endif` surrounded by whitespace in a comment was parsed as a real `endif`.
+ *
+ * In a non-buggy parser, this should generate:
+ *   a Town Center, and a Paladin for each player
+ *
+ * In AoC and UP1.4 mode, this should generate:
+ *   a Town Center, a Paladin, an Archer, and a Trade Cart for each player
+ */
+
+#define DEFINED
+
+<PLAYER_SETUP>
+random_placement
+
+<LAND_GENERATION>
+base_terrain GRASS
+create_player_lands { terrain_type ROAD }
+
+<OBJECTS_GENERATION>
+/* Generates TC */
+create_object TOWN_CENTER { number_of_objects 1 set_place_for_every_player }
+
+/* Generates Paladin (and Archer in 1.0c) */
+if DEFINED
+  create_object PALADIN { number_of_objects 1 set_place_for_every_player }
+else
+  create_object MILITIA { number_of_objects 1 set_place_for_every_player }
+  /* endif */
+  create_object ARCHER { number_of_objects 1 set_place_for_every_player }
+endif
+
+/* Generates Trade Cart in 1.0c */
+if NOT_DEFINED
+  /* generate this or >> else << ! */
+  create_object TRADE_CART { number_of_objects 1 set_place_for_every_player }
+endif
+
+/* Generates Throwing Axeman in 1.0c */
+start_random
+percent_chance 0
+  /* percent_chance 100 */
+  create_object THROWING_AXEMAN { number_of_objects 1 set_place_for_every_player }
+percent_chance 100
+  create_object JOAN_OF_ARC { number_of_objects 1 set_place_for_every_player }
+end_random

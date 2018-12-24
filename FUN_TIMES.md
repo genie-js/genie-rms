@@ -76,3 +76,15 @@ endif
 In older versions (before UserPatch 1.5), the same issue existed for `if` statements. As of UP 1.5, this has been fixed, and you can now safely use comments inside `if` branches.
 
 In other versions, the only workaround is to never use words that have a special meaning in comments inside branching statements. Don't use constant names either!
+
+## `rnd()` spacing
+
+UserPatch 1.5 added `rnd()` expressions that can be used to specify random numbers anywhere a number can be specified. When using it, make sure that there are no spaces:
+
+ - bad: `rnd(1, 10)`
+ - bad: `rnd (1,10)`
+ - good: `rnd(1,10)`
+
+**Why?**
+
+The game parses numbers by first reading a word, then parsing that word into a number. `rnd()` numbers work the same way—first a word is read, and if that word is `rnd(%d,%d)` it's replaced with a random number.

@@ -2,6 +2,7 @@
   "name": "genie-rms",
   "version": "0.0.0",
   "author": "Renée Kooi <renee@kooi.me>",
+  "bin": "./bin/genie-rms",
   "browser": {
     "pngjs": false,
     "./lib/Logger.js": "./lib/BrowserLogger.js",
@@ -12,6 +13,8 @@
     "awestruct": "^1.0.0",
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
+    "dedent": "^0.7.0",
+    "minimist": "^1.2.0",
     "msvcrt-rand": "^1.0.0",
     "pngjs": "^3.3.3"
   },

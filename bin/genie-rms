@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const { promisify } = require('util')
+const readFile = promisify(fs.readFile)
+const finished = promisify(require('stream').finished)
+const { PNG } = require('pngjs')
+const minimist = require('minimist')
+const dedent = require('dedent')
+const DebugController = require('../src/DebugController')
+
+const help = dedent`
+  genie-rms <FILE> [OPTIONS]
+
+  Generate a random map and save the minimap image.
+
+  Options:
+    --minimap       Set the minimap output file name. Defaults to map.png in the
+                    current working directory.
+    --seed          Set the random map seed. Defaults to the current time.
+    --help          Show this help.
+    --debug-steps   Dump a minimap image after each step.
+`
+
+const args = minimist(process.argv.slice(2), {
+  alias: {
+    debugSteps: 'debug-steps',
+    h: 'help'
+  },
+  boolean: [
+    'debug-steps',
+    'help'
+  ],
+  number: [
+    'seed'
+  ]
+})
+
+function d (...args) {
+  return args.find((v) => v !== undefined)
+}
+
+async function main (args) {
+  const [file] = args._
+  if (!file || args.h) {
+    console.log(help)
+    process.exit(0)
+  }
+
+  const content = await readFile(file)
+
+  const controller = new DebugController(content, {
+    randomSeed: d(args.seed, Date.now())
+  })
+  controller.generate()
+
+  function writePng (imageData, name) {
+    const png = new PNG({
+      width: controller.map.sizeX,
+      height: controller.map.sizeY
+    })
+    png.data = Buffer.from(imageData)
+
+    return finished(png.pack().pipe(fs.createWriteStream(name)))
+  }
+
+  if (args.debugSteps) {
+    for (const [name, imageData] of controller.minimaps) {
+      await writePng(imageData, `./map-${name}.png`)
+    }
+  }
+
+  await writePng(controller.map.render(), d(args.minimap, './map.png'))
+}
+
+main(args).catch((err) => {
+  setImmediate(() => { throw err })
+})

@@ -176,37 +176,39 @@ class LandGenerator extends Module {
 
     this.logger.log('distributing clumps', this.lands.map(l => l.tiles))
     this.logger.log('available tiles', stacks.map(s => s.size()))
+    const debugLog = () => {} // this.logger.log.bind(this.logger)
+
     let done = false
     while (!done) {
       done = true
-      for (let i = 0; i < this.lands.length; i++) {
+      for (let i = 0; i < this.lands.length; i += 1) {
         const land = this.lands[i]
-        this.logger.log('trying', i)
+        debugLog('trying', i)
         if (landSizes[i] >= land.tiles) {
-          this.logger.log('skipping', i, 'because of size')
+          debugLog('skipping', i, 'because of size')
           continue
         }
         const tile = this.popStack(stacks[i])
         if (!tile) {
-          this.logger.log('skipping', i, 'because stack is empty')
+          debugLog('skipping', i, 'because stack is empty')
           continue
         }
         const { x, y } = tile
         done = false
 
         if (this.chance(x, y, i) > this.random.nextRange(100)) {
-          this.logger.log('skipping', i, 'because of random')
+          debugLog('skipping', i, 'because of random')
           this.searchMapRows[y][x] = SM_EMPTY
           continue
         }
 
         const cost = this.checkTerrainAndZone(land, x, y)
         if (cost === 0) {
-          this.logger.log('skipping', i, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
+          debugLog('skipping', i, 'because cost == 0', land.terrain, x, y, this.searchMapRows[y][x])
           continue
         }
         if (this.searchMapRows[y][x] === SM_UNOCCUPIED && cost > 0) {
-          this.logger.log('placing', i)
+          debugLog('placing', i)
 
           this.map.get(x, y).terrain = land.terrain
           this.searchMapRows[y][x] = land.zone
@@ -231,7 +233,7 @@ class LandGenerator extends Module {
           landSizes[i] += 1
         }
       }
-      this.logger.log('land sizes:', landSizes)
+      debugLog('land sizes:', landSizes)
     }
 
     this.logger.log('cleaning terrain')

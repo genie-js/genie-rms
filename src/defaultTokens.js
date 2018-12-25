@@ -104,23 +104,20 @@ exports.base = [
   ['temp_min_distance_group_placement', 93, 0, [2, 0, 0, 0]]
 ]
 
-// TODO check if these have IDs at all
-// + check the argtypes
 exports.userpatch14 = [
-  ['grouped_by_team', 1001, 0, [0, 0, 0, 0]],
-  ['nomad_resources', 1002, 0, [0, 0, 0, 0]],
-  ['base_elevation', 1003, 0, [2, 0, 0, 0]],
-  ['resource_delta', 1004, 0, [2, 0, 0, 0]]
+  ['ai_info_map_type', 90, [3, 2, 2, 2]],
+  ['grouped_by_team', 91, 0, [0, 0, 0, 0]],
+  ['nomad_resources', 89, 0, [0, 0, 0, 0]],
+  ['base_elevation', 64, 0, [2, 0, 0, 0]],
+  ['resource_delta', 64, 0, [2, 0, 0, 0]]
 ]
 
-// TODO check if these have IDs at all
-// + check the argtypes
 exports.userpatch15 = [
-  ['weather_type', 2001, 0, [2, 2, 2, 2]],
-  ['direct_placement', 2002, 0, [0, 0, 0, 0]],
-  ['effect_amount', 2003, 0, [2, 0, 0, 0]],
-  ['effect_percent', 2004, 0, [2, 0, 0, 0]],
-  ['guard_state', 2005, 0, [2, 0, 0, 0]],
-  ['terrain_state', 2005, 0, [2, 0, 0, 0]],
-  ['assign_to', 2006, 0, [0, 0, 0, 0]]
+  ['weather_type', 85, 0, [2, 2, 2, 2]],
+  ['direct_placement', 88, 0, [0, 0, 0, 0]],
+  ['effect_amount', 86, 0, [3, 3, 3, 2]],
+  ['effect_percent', 87, 0, [3, 3, 3, 2]],
+  ['guard_state', 84, 0, [3, 3, 2, 2]],
+  ['terrain_state', 83, 0, [2, 2, 2, 2]],
+  ['assign_to', 65, 0, [3, 2, 2, 2]]
 ]

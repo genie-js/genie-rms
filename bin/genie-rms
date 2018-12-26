@@ -8,6 +8,7 @@ const { PNG } = require('pngjs')
 const minimist = require('minimist')
 const dedent = require('dedent')
 const DebugController = require('../src/DebugController')
+const MinimapRenderer = require('../src/MinimapRenderer')
 
 const help = dedent`
   genie-rms <FILE> [OPTIONS]
@@ -70,7 +71,10 @@ async function main (args) {
     }
   }
 
-  await writePng(controller.map.render(), d(args.minimap, './map.png'))
+  await writePng(
+    new MinimapRenderer(controller.map).render(),
+    d(args.minimap, './map.png')
+  )
 }
 
 main(args).catch((err) => {

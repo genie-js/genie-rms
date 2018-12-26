@@ -1,5 +1,6 @@
 const Module = require('./Module')
 const Controller = require('./Controller')
+const MinimapRenderer = require('./MinimapRenderer')
 
 class DebugModule extends Module {
   constructor (map, controller, target) {
@@ -11,7 +12,7 @@ class DebugModule extends Module {
   generate () {
     const { parent, target } = this
     parent.searchMaps.set(target.constructor.name, new Uint8Array(this.searchMap))
-    parent.minimaps.set(target.constructor.name, this.map.render())
+    parent.minimaps.set(target.constructor.name, new MinimapRenderer(this.map).render())
   }
 }
 

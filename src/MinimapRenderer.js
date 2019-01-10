@@ -1,16 +1,6 @@
-const terrainColors = require('./terrainColors.json')
-const unitColors = require('./unitColors.json')
-
-const playerColors = {
-  1: '#0000ff',
-  2: '#ff0000',
-  3: '#00ff00',
-  4: '#ffff00',
-  5: '#00ffff',
-  6: '#ff00ff',
-  7: '#434343',
-  8: '#ff8201'
-}
+const terrainColors = require('genie-shared-data/terrainColors.json')
+const unitColors = require('genie-shared-data/unitColors.json')
+const playerColors = require('genie-shared-data/playerColors.json')
 
 class MinimapRenderer {
   constructor (map) {

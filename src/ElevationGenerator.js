@@ -1,5 +1,6 @@
 const Module = require('./Module.js')
 const StackNode = require('./StackNode.js')
+const Logger = require('./Logger.js')
 
 class ElevationGenerator extends Module {
   constructor (map, parent, elevations, hotspots) {
@@ -8,6 +9,7 @@ class ElevationGenerator extends Module {
     this.hotspots = hotspots
 
     this.schedule = 1.5
+    this.logger = new Logger('elevation')
   }
 
   _resetElevation () {
@@ -40,9 +42,9 @@ class ElevationGenerator extends Module {
         for (const hotspot of this.hotspots) {
           const distX = Math.abs(x - hotspot.x)
           const distY = Math.abs(y - hotspot.y)
-          const value = hotspot.radius * Math.sqrt(distX * distX + distY * distY)
+          const value = hotspot.radius - Math.sqrt(distX * distX + distY * distY)
           if (value > 0) {
-            modifier += value * hotspot.fade
+            modifier += Math.floor(value * hotspot.fade)
           }
         }
 
@@ -56,9 +58,16 @@ class ElevationGenerator extends Module {
     return this.searchMapRows[y][x]
   }
 
+  _matchesTerrain (x, y, terrain, elevation, spacing) {
+    // TODO spacing
+    const tile = this.map.get(x, y)
+    return (terrain === -1 || tile.terrain === terrain) &&
+      tile.elevation >= elevation
+  }
+
   generateElevation (elevation) {
     const { baseTerrain, baseElevation, spacing, height } = elevation
-    let { numberOfClumps } = elevation
+    let { numberOfTiles, numberOfClumps } = elevation
     if (numberOfClumps > 999) numberOfClumps = 999
 
     const clumps = []
@@ -66,7 +75,9 @@ class ElevationGenerator extends Module {
       clumps.push(new StackNode())
     }
 
+    let placedTiles = 0
     const mainStack = this.findTiles(baseTerrain, baseElevation)
+    this.logger.log('generating', clumps.length, 'clumps from', mainStack.size(), 'initial tiles')
 
     for (const clump of clumps) {
       const node = this.popStack(mainStack)
@@ -75,6 +86,7 @@ class ElevationGenerator extends Module {
           this._matchesTerrain(node.x, node.y, baseTerrain, baseElevation, spacing)) {
         const tile = this.map.get(node.x, node.y)
         tile.elevation = height
+        placedTiles += 1
 
         if (node.x > 0) this.pushStack(clump, node.x - 1, node.y, 0, 0)
         if (node.y > 0) this.pushStack(clump, node.x, node.y - 1, 0, 0)
@@ -82,10 +94,60 @@ class ElevationGenerator extends Module {
         if (node.y < this.map.sizeY - 1) this.pushStack(clump, node.x, node.y + 1, 0, 0)
       }
     }
+
+    let done = false
+    while (!done && placedTiles < numberOfTiles) {
+      done = true
+      for (let i = 0; i < clumps.length; i += 1) {
+        const node = this.popStack(clumps[i])
+        if (!node) {
+          continue
+        }
+
+        done = false
+
+        if (this._getModifier(node.x, node.y) > this.random.nextRange(100)) {
+          this.searchMapRows[node.x][node.y] = 101
+          continue
+        }
+
+        if (!this._matchesTerrain(node.x, node.y, baseTerrain, baseElevation, spacing)) {
+          continue
+        }
+
+        const tile = this.map.get(node.x, node.y)
+        if (tile.elevation === baseElevation) {
+          const chance = 250 - 15 * 1
+          tile.elevation = height
+          placedTiles += 1
+
+          if (node.x > 0 && this.map.get(node.x - 1, node.y).elevation === baseElevation) {
+            this.pushStack(clumps[i], node.x - 1, node.y, 0, this.random.nextRange(100) + chance)
+          }
+          if (node.x < this.map.sizeX - 1 && this.map.get(node.x + 1, node.y).elevation === baseElevation) {
+            this.pushStack(clumps[i], node.x + 1, node.y, 0, this.random.nextRange(100) + chance)
+          }
+          if (node.y > 0 && this.map.get(node.x, node.y - 1).elevation === baseElevation) {
+            this.pushStack(clumps[i], node.x, node.y - 1, 0, this.random.nextRange(100) + chance)
+          }
+          if (node.y < this.map.sizeY - 1 && this.map.get(node.x, node.y + 1).elevation === baseElevation) {
+            this.pushStack(clumps[i], node.x, node.y + 1, 0, this.random.nextRange(100) + chance)
+          }
+        }
+      }
+    }
+
+    for (const clump of clumps) {
+      this.deinitStack(clump)
+    }
+
+    this.logger.log('placed', placedTiles)
   }
 
   findTiles (baseTerrain, baseElevation) {
     const stack = new StackNode()
+
+    this.logger.log('find tiles', baseTerrain, baseElevation)
 
     for (let y = 0; y < this.map.sizeY; y++) {
       for (let x = 0; x < this.map.sizeX; x++) {

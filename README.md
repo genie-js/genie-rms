@@ -1,5 +1,7 @@
 # genie-rms
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/genie-js/genie-rms.svg)](https://greenkeeper.io/)
+
 Age of Empires 2 Random Map Script parser for Node and the browser.
 
 > This library aims to be as compatible with AoE2 as possible.

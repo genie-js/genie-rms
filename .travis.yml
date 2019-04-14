@@ -7,16 +7,16 @@ matrix:
       node_js: 10
     - os: linux
       node_js: 8
-    - os: linux
-      node_js: 6
+    # - os: linux
+    #   node_js: 6
     - os: windows
       node_js: latest
     - os: windows
       node_js: 10
     - os: windows
       node_js: 8
-    - os: windows
-      node_js: 6
+    # - os: windows
+    #   node_js: 6
 
 script:
   - npm test

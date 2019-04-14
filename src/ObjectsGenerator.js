@@ -27,7 +27,7 @@ class ObjectsGenerator extends Module {
   }
 
   generate () {
-    this.searchMap.fill(0x10)
+    this.searchMap.fill(1)
 
     for (const desc of this.objects) {
       this.generateObjects(desc)
@@ -101,7 +101,7 @@ class ObjectsGenerator extends Module {
       if (desc.groupingType !== 0) {
         if (desc.groupingType === 1) {
           this.placeLooseGroup(desc, tile, desc.playerId)
-        } else {
+        } else if (desc.groupingType === 2) {
           this.placeTightGroup(desc, tile, desc.playerId)
         }
       } else {
@@ -120,42 +120,47 @@ class ObjectsGenerator extends Module {
     this.logger.log('placeAvoidObjects', desc.type)
   }
 
+  _findTownCenter (ownerId) {
+    for (let x = 0; x < this.map.sizeX; x++) {
+      for (let y = 0; y < this.map.sizeY; y++) {
+        const tile = this.map.get(x, y)
+        if (tile.object && tile.object.type === 109 && tile.object.player === ownerId) {
+          return { x, y }
+        }
+      }
+    }
+  }
+
   placeWalls (desc, minDistanceToPlayers, maxDistanceToPlayers, ownerId) {
     // TODO implement the more complex MapAnalysis based version
     const distance = minDistanceToPlayers + this.random.nextRange(maxDistanceToPlayers - minDistanceToPlayers)
 
-    const place = (x, y) => {
-      this.map.place({ x, y }, {
-        type: desc.type,
-        player: ownerId
-      })
-    }
-
-    const findTc = () => {
-      for (let x = 0; x < this.map.sizeX; x++) {
-        for (let y = 0; y < this.map.sizeY; y++) {
-          const tile = this.map.get(x, y)
-          if (tile.object && tile.object.type === 109 && tile.object.player === ownerId) {
-            return { x, y }
-          }
-        }
-      }
-    }
-
     // oof
-    const tc = findTc()
+    const tc = this._findTownCenter(ownerId)
     this.logger.log('place walls for', ownerId, 'at', tc)
     const x0 = Math.max(0, tc.x - distance)
     const y0 = Math.max(0, tc.y - distance)
     const x1 = Math.min(this.map.sizeX - 1, tc.x + distance)
     const y1 = Math.min(this.map.sizeY - 1, tc.y + distance)
     for (let x = x0; x < x1; x++) {
-      place(x, y0)
-      place(x, y1)
+      this.map.place({ x, y: y0 }, {
+        type: desc.type,
+        player: ownerId
+      })
+      this.map.place({ x, y: y1 }, {
+        type: desc.type,
+        player: ownerId
+      })
     }
     for (let y = y0 + 1; y < y1 - 1; y++) {
-      place(x0, y)
-      place(x1, y)
+      this.map.place({ x: x0, y }, {
+        type: desc.type,
+        player: ownerId
+      })
+      this.map.place({ x: x1, y }, {
+        type: desc.type,
+        player: ownerId
+      })
     }
   }
 

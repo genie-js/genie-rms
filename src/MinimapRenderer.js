@@ -1,5 +1,5 @@
 const terrainColors = require('genie-shared-data/terrainColors.json')
-const unitColors = require('genie-shared-data/unitColors.json')
+const gaiaObjectColors = require('genie-shared-data/gaiaObjectColors.json')
 const playerColors = require('genie-shared-data/playerColors.json')
 
 class MinimapRenderer {
@@ -17,8 +17,8 @@ class MinimapRenderer {
         let color = terrainColors[tile.terrain]
         if (tile.object) {
           const { type, player } = tile.object
-          if (unitColors[type]) {
-            color = unitColors[type]
+          if (gaiaObjectColors[type]) {
+            color = gaiaObjectColors[type]
           }
           if (playerColors[player]) {
             color = playerColors[player]

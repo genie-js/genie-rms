@@ -39,6 +39,7 @@
     "build": "buble src --output lib -y dangerousForOf -m && npm run build:lres && npm run build:rmdef",
     "build:lres": "brfs src/hardcodedDrsIncludes.js > lib/hardcodedDrsIncludes.js",
     "build:rmdef": "brfs src/randomMapDef.js > lib/randomMapDef.js",
+    "lint": "standard src/**/*.js",
     "test": "jest"
   },
   "standard": {

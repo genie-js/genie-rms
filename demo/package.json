@@ -27,32 +27,32 @@
     ]
   },
   "dependencies": {
-    "codemirror": "^5.39.2",
-    "debounce": "^1.1.0",
-    "vue": "^2.0.1",
-    "vue-codemirror": "^4.0.5"
+    "codemirror": "^5.48.0",
+    "debounce": "^1.2.0",
+    "vue": "^2.6.10",
+    "vue-codemirror": "^4.0.6"
   },
   "devDependencies": {
-    "babel-core": "^6.0.0",
-    "babel-plugin-transform-runtime": "^6.0.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-runtime": "^6.0.0",
-    "babelify": "^7.2.0",
-    "brfs": "^2.0.0",
-    "browserify": "^13.1.0",
-    "browserify-hmr": "^0.3.1",
+    "@babel/core": "^7.0.0",
+    "@babel/plugin-transform-runtime": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/runtime": "^7.0.0",
+    "babelify": "^10.0.0",
+    "brfs": "^2.0.2",
+    "browserify": "^16.2.3",
+    "browserify-hmr": "^0.3.7",
     "cross-env": "^2.0.0",
     "envify": "^3.4.1",
-    "eslint": "^3.3.0",
-    "eslint-config-standard": "^5.3.5",
-    "eslint-plugin-html": "^1.5.2",
-    "eslint-plugin-promise": "^2.0.1",
-    "eslint-plugin-standard": "^2.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-html": "^5.0.5",
+    "eslint-plugin-promise": "^4.1.1",
+    "eslint-plugin-standard": "^4.0.0",
     "http-server": "^0.9.0",
     "npm-run-all": "^2.3.0",
     "proxyquireify": "^3.0.1",
-    "terser": "^3.8.1",
-    "vueify": "^9.0.0",
-    "watchify": "^3.4.0"
+    "terser": "^3.17.0",
+    "vueify": "^9.4.1",
+    "watchify": "^3.11.1"
   }
 }
